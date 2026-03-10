@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Payroll.API/Payroll.API.csproj" />
+  <Project Path="Payroll.Core/Payroll.Core.csproj" />
+  <Project Path="Payroll.Data/Payroll.Data.csproj" />
+  <Project Path="Payroll.Services/Payroll.Services.csproj" />
+  <Project Path="Payroll.Web/Payroll.Web.csproj" />
+</Solution>

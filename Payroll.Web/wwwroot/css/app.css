@@ -1,0 +1,136 @@
+/* Colores y fuentes base */
+:root {
+    --primary-blue: #0d6efd; /* Azul principal de Bootstrap */
+    --dark-blue: #002b5c; /* Azul oscuro para el sidebar */
+    --light-gray-bg: #f8f9fa; /* Fondo general del dashboard */
+    --text-dark: #343a40;
+    --text-muted: #6c757d;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: var(--light-gray-bg);
+    color: var(--text-dark);
+}
+
+/* Estilo para el Login */
+.login-container {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d6efd 0%, #003d99 100%); /* Degradado azul */
+}
+
+.login-card {
+    background: white;
+    padding: 3rem;
+    border-radius: 1rem; /* Bordes redondeados */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15); /* Sombra suave */
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.login-logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1.5rem;
+}
+
+/* Estilo para el Dashboard (Sidebar y Contenido) */
+.dashboard-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 260px;
+    background-color: var(--dark-blue);
+    color: white;
+    padding: 1.5rem 0;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+    .sidebar h3 {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: white;
+    }
+
+    .sidebar .nav-link {
+        color: #a0aec0; /* Gris claro para links inactivos */
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+        .sidebar .nav-link.active,
+        .sidebar .nav-link:hover {
+            background-color: var(--accent-blue); /* Azul al activar/hover */
+            color: white;
+            border-left: 5px solid var(--primary-blue);
+        }
+
+.main-content {
+    flex-grow: 1;
+    padding: 2rem;
+    background-color: var(--light-gray-bg);
+}
+
+.card-metric {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.login-logo {
+    width: 120px; /* O el tamaño que prefieras */
+    height: auto;
+    display: block;
+    margin: 0 auto; /* Centra el logo */
+}
+
+/* Estilo para el botón del submenú */
+.btn-toggle {
+    color: rgba(255, 255, 255, .8);
+    background-color: transparent;
+    padding: 0.5rem 1rem;
+    text-align: left;
+}
+
+    .btn-toggle:hover {
+        color: #fff;
+        background-color: rgba(255, 255, 255, .1);
+    }
+
+/* Rotación de la flecha */
+.transition-icon {
+    transition: transform 0.3s ease;
+}
+
+.rotate {
+    transform: rotate(180deg);
+}
+
+/* Estilo de los links internos */
+.btn-toggle-nav .nav-link {
+    color: rgba(255, 255, 255, .6) !important;
+    font-size: 0.9rem;
+}
+
+    .btn-toggle-nav .nav-link:hover {
+        color: #fff !important;
+    }
+
+
+.nav-item .collapse {
+    background: rgba(255, 255, 255, 0.03); /* Un fondo sutil para los hijos */
+    border-radius: 8px;
+    margin: 0 5px;
+}
+
+.btn-toggle-nav .nav-link.active {
+    color: #0d6efd !important; /* El color de tu marca para el item activo */
+    font-weight: 600;
+}

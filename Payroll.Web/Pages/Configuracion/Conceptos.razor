@@ -1,0 +1,83 @@
+﻿@page "/configuracion/conceptos"
+@inherits BaseListado<ConceptoDto>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark">Configuración de Conceptos</h2>
+    <button class="btn btn-primary shadow-sm" @onclick="IrANuevo">
+        <i class="bi bi-plus-circle me-2"></i> Nuevo Concepto
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4" style="width: 80px;">Cod</th>
+                        <th>Nombre</th> @* Cambiado de Descripción a Nombre *@
+                        <th>Tipo</th>
+                        <th>Valor Defecto</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Lista == null)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                                <span class="ms-2">Cargando conceptos...</span>
+                            </td>
+                        </tr>
+                    }
+                    else if (!Lista.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                No hay conceptos configurados.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var c in Lista)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-mono small">@c.Codigo.ToString("D3")</td>
+                                @* Cambiado de c.Descripcion a c.Nombre *@
+                                <td class="fw-semibold">@c.Nombre</td>
+                                <td>
+                                    <span class="badge rounded-pill shadow-sm"
+                                          style="background-color: @(string.IsNullOrEmpty(c.TipoColorHex) ? "#6c757d" : c.TipoColorHex); color: white;">
+                                        @* Cambiado de c.TipoNombre a c.TipoConceptoNombre *@
+                                        @(c.TipoNombre ?? "Sin Tipo")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">@c.ValorDefecto.ToString("N2")</span>
+                                    <span class="badge @(c.EsPorcentaje ? "bg-warning text-dark" : "bg-success") ms-1">
+                                        @(c.EsPorcentaje ? "%" : "$")
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-light border me-1" @onclick="() => IrAEditar(c.Id)">
+                                        <i class="bi bi-pencil text-primary"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light border" @onclick="() => Eliminar(c.Id)">
+                                        <i class="bi bi-trash text-danger"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override string PageUrl => "/configuracion/conceptos";
+    // Si tu API no sigue el estándar plural, asegúrate de definir ApiUrl si es distinto a "conceptos"
+}

@@ -1,0 +1,31 @@
+﻿@page "/dashboard"
+@layout MainLayout
+@inject NavigationManager NavManager
+
+<h2 class="mb-4">Dashboard General</h2>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        @* Agregamos el onclick y el estilo cursor-pointer *@
+        <div class="card card-metric p-4 shadow-sm border-0" @onclick='() => NavManager.NavigateTo("/personas")' style="cursor: pointer;">
+            <h5 class="text-muted">Total Empleados</h5>
+            <h2 class="text-primary display-5">48</h2>
+            <small class="text-primary">Administrar listado →</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-metric p-4">
+            <h5 class="text-muted">Total Bruto Mes</h5>
+            <h2 class="text-success display-5">$ 12.450.000</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-metric p-4">
+            <h5 class="text-muted">Próxima Liquidación</h5>
+            <h2 class="text-warning display-5">20 Febrero</h2>
+        </div>
+    </div>
+</div>
+
+<h3>Últimas Actividades</h3>
+<p>Aquí se mostrarán los últimos eventos o liquidaciones recientes.</p>

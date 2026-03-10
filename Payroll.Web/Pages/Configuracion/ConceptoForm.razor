@@ -1,0 +1,83 @@
+﻿@page "/configuracion/conceptos/nuevo"
+@page "/configuracion/conceptos/editar/{Id:int}"
+@inherits BaseFormulario<ConceptoDto>
+
+<div class="mb-4">
+    <button class="btn btn-link text-decoration-none p-0" @onclick="Cancelar">
+        <i class="bi bi-arrow-left"></i> Volver a la lista
+    </button>
+    <h3 class="fw-bold mt-2">@(Id == 0 ? "Nuevo Concepto" : "Editar Concepto")</h3>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Código</label>
+                <input type="text" class="form-control" @bind="Modelo.Codigo" @bind:event="oninput" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Descripción</label>
+                <input type="text" class="form-control" @bind="Modelo.Descripcion" @bind:event="oninput" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Tipo</label>
+                <select class="form-select" @bind="Modelo.TipoConceptoId">
+                    <option value="0" disabled>Seleccione un tipo...</option>
+                    @if (tipos != null)
+                    {
+                        @foreach (var t in tipos)
+                        {
+                            <option value="@t.Id">@t.Nombre</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Valor por Defecto</label>
+                <div class="input-group">
+                    <input type="number" step="0.01" class="form-control" @bind="Modelo.ValorDefecto" @bind:event="oninput" />
+                    <span class="input-group-text">@(Modelo.EsPorcentaje ? "%" : "$")</span>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex align-items-center">
+                <div class="form-check form-switch mt-4">
+                    @* El checkbox no necesita oninput, se vincula al instante *@
+                    <input class="form-check-input" type="checkbox" @bind="Modelo.EsPorcentaje" id="esPorc">
+                    <label class="form-check-label fw-bold" for="esPorc">¿Es Porcentaje?</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <button class="btn btn-light me-2" @onclick="Cancelar">Cancelar</button>
+            <button class="btn btn-primary px-5" @onclick="Guardar" disabled="@(!HuboCambios())">
+                <i class="bi bi-save me-2"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override string ApiUrl => "conceptos";
+    protected override string PageUrl => "/configuracion/conceptos";
+
+    private List<TipoConcepto>? tipos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            tipos = await Http.GetFromJsonAsync<List<TipoConcepto>>("api/tiposconceptos");
+            if (Id == 0 && Modelo.TipoConceptoId == 0 && tipos?.Count > 0) 
+            {
+                Modelo.TipoConceptoId = tipos.First().Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar tipos: {ex.Message}");
+            tipos = new();
+        }
+    }
+}

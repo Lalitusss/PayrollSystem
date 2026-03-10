@@ -1,0 +1,23 @@
+﻿@page "/"
+@layout Payroll.Web.Shared.EmptyLayout
+@inject NavigationManager NavManager
+<div class="login-container">
+    <div class="login-card">
+        @* Reemplaza tu línea de imagen por esta *@
+        <img src="/img/payroll-logo.png" alt="Payroll Logo" width="150" class="login-logo mb-4">
+        <div class="mb-3">
+            <input type="email" class="form-control form-control-lg" placeholder="Usuario" />
+        </div>
+        <div class="mb-4">
+            <input type="password" class="form-control form-control-lg" placeholder="Contraseña" />
+        </div>
+        <button @onclick="GoToDashboard" class="btn btn-primary btn-lg w-100 shadow-sm">Entrar</button>
+    </div>
+</div>
+@code {
+ 
+    private void GoToDashboard()
+    {
+        NavManager.NavigateTo("dashboard");
+    }
+}

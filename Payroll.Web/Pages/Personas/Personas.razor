@@ -1,0 +1,94 @@
+﻿@page "/personas"
+@inherits BaseListado<PersonaDto>
+@layout MainLayout
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark">Gestión de Personal</h2>
+    <button class="btn btn-primary shadow-sm" @onclick="IrANuevo">
+        <i class="bi bi-plus-circle me-2"></i>Nueva Persona
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Empleado</th>
+                        <th>CUIL</th>
+                        <th>Obra Social</th>
+                        <th>Ingreso</th>
+                        <th>Estado</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Lista == null)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="mt-2 text-muted">Cargando datos optimizados...</p>
+                            </td>
+                        </tr>
+                    }
+                    else if (!Lista.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-people mb-2 d-block fs-2"></i>
+                                No hay empleados en la base de datos.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var p in Lista)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    @* Usamos la propiedad combinada que viene del DTO *@
+                                    <div class="fw-semibold">@p.NombreCompleto</div>
+                                    <div class="small text-muted">@p.Email</div>
+                                </td>
+                                <td class="text-secondary">@p.CUIL</td>
+                                <td>
+                                    @* Cambio clave: ya no hay objeto anidado, usamos el string directo *@
+                                    @if (!string.IsNullOrEmpty(p.ObraSocialSigla))
+                                    {
+                                        <span class="badge bg-light text-dark border" title="@p.ObraSocialNombre">
+                                            @p.ObraSocialSigla
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Sin asignar</span>
+                                    }
+                                </td>
+                                <td>@p.FechaIngreso.ToShortDateString()</td>
+                                <td>
+                                    <span class="badge @(p.Activo ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") border">
+                                        @(p.Activo ? "Activo" : "Baja")
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-light border me-1" @onclick="() => IrAEditar(p.Id)">
+                                        <i class="bi bi-pencil text-primary"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light border" @onclick="() => Eliminar(p.Id)">
+                                        <i class="bi bi-trash text-danger"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override string PageUrl => "/personas";
+}

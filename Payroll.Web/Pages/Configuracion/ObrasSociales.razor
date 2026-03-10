@@ -1,0 +1,73 @@
+﻿@page "/configuracion/obrassociales"
+@inherits BaseListado<ObraSocialDto>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark">Obras Sociales</h2>
+    <button class="btn btn-primary shadow-sm" @onclick="IrANuevo">
+        <i class="bi bi-plus-circle me-2"></i> Nueva Obra Social
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Código ARCA</th>
+                        <th>Nombre / Razón Social</th>
+                        <th>Sigla</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Lista == null)
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                                <span class="ms-2">Cargando obras sociales...</span>
+                            </td>
+                        </tr>
+                    }
+                    else if (!Lista.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                No hay obras sociales registradas.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var os in Lista)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-mono small">@os.CodigoARCA</td>
+                                <td class="fw-semibold">@os.Nombre</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border px-2">
+                                        @os.Sigla
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-light border me-1" @onclick="() => IrAEditar(os.Id)">
+                                        <i class="bi bi-pencil text-primary"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light border" @onclick="() => Eliminar(os.Id)">
+                                        <i class="bi bi-trash text-danger"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override string EntityName => "obrassociales";
+    protected override string PageUrl => "/configuracion/obrassociales";
+}

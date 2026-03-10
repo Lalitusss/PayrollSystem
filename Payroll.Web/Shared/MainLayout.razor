@@ -1,0 +1,87 @@
+﻿@inherits LayoutComponentBase
+
+<div class="dashboard-layout">
+    <div class="sidebar">
+        <h3>Payroll System</h3>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All">
+                    <i class="bi bi-grid-1x2 me-2"></i> Dashboard
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="personas">
+                    <i class="bi bi-people me-2"></i> Empleados
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link btn-toggle d-inline-flex align-items-center rounded border-0 w-100 @(liquidOpen ? "" : "collapsed")"
+                        @onclick="ToggleLiquid">
+                    <i class="bi bi-calculator me-2"></i>
+                    Liquidaciones
+                    <i class="bi bi-chevron-down ms-auto transition-icon @(liquidOpen ? "rotate" : "")"></i>
+                </button>
+            
+                <div class="collapse @(liquidOpen ? "show" : "")">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ps-4">
+                        <li><NavLink href="liquidaciones/generar" class="nav-link py-1">Generar Liquidación</NavLink></li>
+                        <li><NavLink href="liquidaciones/historial" class="nav-link py-1">Ver Liquidaciones</NavLink></li>
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="reportes">
+                    <i class="bi bi-graph-up me-2"></i> Reportes
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link btn-toggle d-inline-flex align-items-center rounded border-0 w-100 @(configOpen ? "" : "collapsed")"
+                        @onclick="ToggleConfig">
+                    <i class="bi bi-gear me-2"></i>
+                    Configuración
+                    <i class="bi bi-chevron-down ms-auto transition-icon @(configOpen ? "rotate" : "")"></i>
+                </button>
+            
+                <div class="collapse @(configOpen ? "show" : "")">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ps-4">
+                        <li><NavLink href="configuracion/bancos" class="nav-link py-1">Bancos</NavLink></li>
+                        <li><NavLink href="configuracion/cargos" class="nav-link py-1">Cargos</NavLink></li>
+                        <li><NavLink href="configuracion/categorias" class="nav-link py-1">Categorías</NavLink></li>
+                        <li><NavLink href="configuracion/conceptos" class="nav-link py-1">Conceptos</NavLink></li>
+                        <li><NavLink href="configuracion/convenios" class="nav-link py-1">Convenios</NavLink></li>
+                        <li><NavLink href="configuracion/obrassociales" class="nav-link py-1">Obras Sociales</NavLink></li>
+                        <li><NavLink href="configuracion/tiposconceptos" class="nav-link py-1">Tipos Conceptos</NavLink></li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <NavLink class="nav-link" href="logout">
+                    <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+                </NavLink>
+            </li>
+        </ul>
+    </div>
+    <main class="main-content">
+        @Body
+    </main>
+</div>
+
+@code {
+    private bool configOpen = false;
+    private bool liquidOpen = false;
+
+    private void ToggleConfig()
+    {
+        configOpen = !configOpen;
+        // Si abro Configuración, cierro Liquidaciones
+        if (configOpen) liquidOpen = false;
+    }
+
+    private void ToggleLiquid()
+    {
+        liquidOpen = !liquidOpen;
+        // Si abro Liquidaciones, cierro Configuración
+        if (liquidOpen) configOpen = false;
+    }
+}

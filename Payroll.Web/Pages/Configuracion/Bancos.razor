@@ -1,0 +1,62 @@
+﻿@page "/configuracion/bancos"
+@inherits BaseListado<BancoDto>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Bancos</h2>
+    <button class="btn btn-primary shadow-sm" @onclick="IrANuevo">
+        <i class="bi bi-plus-circle me-2"></i> Nuevo Banco
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Código</th>
+                    <th>Nombre</th>
+                    <th class="text-end pe-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Lista == null)
+                {
+                    <tr>
+                        <td colspan="3" class="text-center py-5">
+                            <div class="spinner-border text-primary spinner-border-sm me-2"></div>
+                            <span class="text-muted">Cargando bancos...</span>
+                        </td>
+                    </tr>
+                }
+                else if (!Lista.Any())
+                {
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted">No hay bancos registrados.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var b in Lista)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-mono">@b.Codigo</td>
+                            <td class="ps-4 fw-mono">@b.Nombre</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-light border me-1" @onclick="() => IrAEditar(b.Id)">
+                                    <i class="bi bi-pencil text-primary"></i>
+                                </button>
+                                <button class="btn btn-sm btn-light border" @onclick="() => Eliminar(b.Id)">
+                                    <i class="bi bi-trash text-danger"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    protected override string PageUrl => "/configuracion/bancos";
+}

@@ -1,0 +1,93 @@
+﻿@page "/configuracion/convenios/nuevo"
+@page "/configuracion/convenios/editar/{Id:int}"
+@inherits BaseFormulario<ConvenioDto>
+
+<div class="mb-4">
+    <button class="btn btn-link text-decoration-none p-0" @onclick="Cancelar">
+        <i class="bi bi-arrow-left"></i> Volver a la lista
+    </button>
+    <h3 class="fw-bold mt-2">@(Id == 0 ? "Nuevo Convenio" : "Editar Convenio")</h3>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-9">
+                <label class="form-label fw-bold">Nombre del Convenio</label>
+                <input type="text" class="form-control"
+                       @bind="Modelo.Nombre"
+                       @bind:event="oninput"
+                       placeholder="Ej: Empleados de Comercio" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Número / CCT</label>
+                <input type="text" class="form-control"
+                       @bind="Modelo.Numero"
+                       @bind:event="oninput"
+                       placeholder="Ej: 130/75" />
+            </div>
+        </div>
+        
+        <div class="text-end mt-4">
+            <button class="btn btn-light me-2" @onclick="Cancelar">Cancelar</button>
+            <button class="btn btn-primary px-5"
+                    @onclick="Guardar"
+                    disabled="@(!HuboCambios())">
+                <i class="bi bi-save me-2"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (Id != 0)
+{
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom-0">
+            <h5 class="fw-bold mb-0 text-primary">Cargos Vinculados</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" style="width: 100px;">ID</th>
+                            <th>Nombre del Cargo</th>
+                            <th class="text-end pe-4" style="width: 120px;">Ver detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Modelo.Cargos != null && Modelo.Cargos.Any())
+                        {
+                            @foreach (var cargo in Modelo.Cargos)
+                            {
+                                <tr>
+                                    <td class="ps-4 text-muted">@cargo.Id</td>
+                                    <td class="fw-bold">@cargo.Nombre</td>
+                                    <td class="text-end pe-4">
+                                        <a href="/configuracion/cargos/editar/@cargo.Id"
+                                               class="btn btn-sm btn-light border" title="Ir al cargo">
+                                            <i class="bi bi-eye text-primary"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center py-5 text-muted">
+                                    <i class="bi bi-info-circle me-2"></i> No hay cargos asociados a este convenio.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override string ApiUrl => "convenios";
+    protected override string PageUrl => "/configuracion/convenios";
+}

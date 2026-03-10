@@ -1,0 +1,52 @@
+﻿@page "/configuracion/obrassociales/nuevo"
+@page "/configuracion/obrassociales/editar/{Id:int}"
+@inherits BaseFormulario<ObraSocialDto>
+
+<div class="mb-4">
+    <button class="btn btn-link text-decoration-none p-0" @onclick="Cancelar">
+        <i class="bi bi-arrow-left"></i> Volver a la lista
+    </button>
+    <h3 class="fw-bold mt-2">@(Id == 0 ? "Nueva Obra Social" : "Editar Obra Social")</h3>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Código (ARCA/SSS)</label>
+                @* Sincronización inmediata *@
+                <input type="text" class="form-control" 
+                       @bind="Modelo.CodigoARCA" 
+                       @bind:event="oninput" 
+                       placeholder="6 dígitos" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Nombre Completo</label>
+                <input type="text" class="form-control" 
+                       @bind="Modelo.Nombre" 
+                       @bind:event="oninput" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Sigla</label>
+                <input type="text" class="form-control" 
+                       @bind="Modelo.Sigla" 
+                       @bind:event="oninput" 
+                       placeholder="Ej: OSDE" />
+            </div>
+        </div>
+        <div class="text-end mt-4">
+            <button class="btn btn-light me-2" @onclick="Cancelar">Cancelar</button>
+            @* Botón deshabilitado si no hay cambios detectados *@
+            <button class="btn btn-primary px-5" 
+                    @onclick="Guardar" 
+                    disabled="@(!HuboCambios())">
+                <i class="bi bi-save me-2"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override string ApiUrl => "obrassociales";
+    protected override string PageUrl => "/configuracion/obrassociales";
+}
