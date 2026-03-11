@@ -11,13 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Estándar para JS
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-
-        // Evita enviar basura al Front; si un campo es null, no se incluye en el JSON
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
-// REEMPLAZO DE SWAGGER POR EL NUEVO OPENAPI NATIVO
+
+// OpenAPI Nativo de .NET
 builder.Services.AddOpenApi();
 
 // 2. CONEXIÓN A BASE DE DATOS
@@ -25,9 +23,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<PayrollDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// 3. Registrar los servicios de aplicación
+// 3. REGISTRAR SERVICIOS DE APLICACIÓN
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
-
 builder.Services.AddScoped<IPersonaService, PersonaService>();
 builder.Services.AddScoped<IConceptoService, ConceptoService>();
 builder.Services.AddScoped<IBancoService, BancoService>();
@@ -38,7 +35,7 @@ builder.Services.AddScoped<ITipoConceptoService, TipoConceptoService>();
 builder.Services.AddScoped<IObraSocialService, ObraSocialService>();
 builder.Services.AddScoped<IProvinciaService, ProvinciaService>();
 
-// 4. CONFIGURACIÓN DE CORS
+// 4. CONFIGURACIÓN DE CORS (Antes del build para asegurar disponibilidad)
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowAll", policy => {
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
@@ -48,38 +45,39 @@ builder.Services.AddCors(options => {
 var app = builder.Build();
 
 // 5. CONFIGURACIÓN DEL PIPELINE
-//if (app.Environment.IsDevelopment())
- 
-    // En .NET 10 usamos MapOpenApi en lugar de UseSwagger
-    app.MapOpenApi();
+// IMPORTANTE: CORS debe ir antes que cualquier mapeo de rutas o auth
+app.UseCors("AllowAll");
 
-    // AQUÍ ACTIVAMOS SCALAR
-    app.MapScalarApiReference(options =>
-    {
-        options.WithTitle("Payroll API - Sistema de Liquidación")
-               .WithTheme(ScalarTheme.Moon) // Podés elegir: Midnight, Moon, Solarized, etc.
-               .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-    });
- 
+// Habilitamos OpenAPI y Scalar para todos los entornos (incluido Azure)
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.WithTitle("Payroll API - Sistema de Liquidación")
+           .WithTheme(ScalarTheme.Moon)
+           .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+});
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
-// --- INSERTAR BLOQUE DE CALENTAMIENTO AQUÍ ---
+
+// Redirección de la raíz (/) a Scalar para evitar la pantalla por defecto de Azure
+app.MapGet("/", () => Results.Redirect("/scalar/v1"));
+
+// --- BLOQUE DE CALENTAMIENTO ---
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<PayrollDbContext>();
     try
     {
-        // Esto obliga a EF Core a compilar los modelos y abrir la conexión con SQL
-        await context.Sistema.AnyAsync();
+        // Forzamos la primera conexión para evitar latencia inicial
+        await context.Database.CanConnectAsync();
         Console.WriteLine("--> Base de Datos Caliente y Lista.");
     }
     catch (Exception ex)
     {
-        // Si falla, te avisará en la consola (útil para debuggear la tabla nueva)
         Console.WriteLine($"--> Error al calentar la base de datos: {ex.Message}");
     }
 }
+
 app.Run();
