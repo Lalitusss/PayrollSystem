@@ -10,44 +10,19 @@ namespace Payroll.API.Controllers;
 public class CategoriasController
     : GenericController<Categoria,CategoriaDto>
 {
+    private readonly ICategoriaService _categoriaService;
     public CategoriasController(ICategoriaService service)
         : base(service)
     {
+        _categoriaService = service;
     }
 
-    [HttpGet("{id}/conceptos")]
-    public async Task<IActionResult> GetConceptos(int id)
+    [HttpGet("convenio/{convenioId}")]
+    public async Task<ActionResult<IEnumerable<CategoriaDto>>> GetByConvenio(int convenioId)
     {
-        var service = (ICategoriaService)_service;
-        var dto = await service.GetByIdConConceptosAsync(id);
-
-        if (dto == null) return NotFound();
-
-        // Devolvemos la lista 'Conceptos' que llenamos manualmente arriba
-        return Ok(dto.Conceptos);
+        // Usamos _categoriaService que SÍ tiene definido GetByConvenioAsync
+        var resultado = await _categoriaService.GetByConvenioAsync(convenioId);
+        return Ok(resultado);
     }
 
-    [HttpPost("{id:int}/conceptos")] // Agregamos :int para mayor claridad
-    public async Task<IActionResult> AsignarConceptos([FromRoute] int id, [FromBody] List<int> conceptosIds)
-    {
-        // Verificamos que la lista no venga nula antes de procesar
-        if (conceptosIds == null)
-            return BadRequest("La lista de IDs de conceptos es requerida en el cuerpo de la petición.");
-
-        try
-        {
-            if (_service is ICategoriaService categoriaService)
-            {
-                await categoriaService.ActualizarConceptosAsync(id, conceptosIds);
-                return Ok(new { message = "Conceptos actualizados correctamente" });
-            }
-
-            return StatusCode(500, "El servicio no implementa ICategoriaService");
-        }
-        catch (Exception ex)
-        {
-            // Esto te va a decir el error real si falla la DB
-            return BadRequest($"Error interno: {ex.Message}");
-        }
-    }
 }

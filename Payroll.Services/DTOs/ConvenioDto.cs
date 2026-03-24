@@ -10,5 +10,5 @@ public class ConvenioDto
     // Al llamarse [Coleccion] + [Count], Mapster ejecuta un 
     // SELECT COUNT(...) en SQL automáticamente.
     public int CargosCount { get; set; }
-    public List<CargoDto> Cargos { get; set; } = new();
+    public List<CategoriaDto> Categorias { get; set; } = new();
 }

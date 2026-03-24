@@ -1,0 +1,38 @@
+﻿@if (Mostrar)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title small text-uppercase fw-bold">@Titulo</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="OnCancelar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        @ChildContent
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="OnCancelar" disabled="@Cargando">Cancelar</button>
+                    <button type="button" class="btn btn-sm btn-primary px-4" @onclick="OnConfirmar" disabled="@Cargando">
+                        @if (Cargando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        @TextoBotonConfirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Mostrar { get; set; }
+    [Parameter] public string Titulo { get; set; } = "Formulario";
+    [Parameter] public string TextoBotonConfirmar { get; set; } = "Guardar";
+    [Parameter] public bool Cargando { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+    [Parameter] public EventCallback OnConfirmar { get; set; }
+}

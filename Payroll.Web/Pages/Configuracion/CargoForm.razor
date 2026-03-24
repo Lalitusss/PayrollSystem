@@ -19,20 +19,6 @@
                        @bind:event="oninput"
                        placeholder="Ej: Administrativo Especializado" />
             </div>
-
-            <div class="col-md-5">
-                <label class="form-label fw-bold">Convenio Colectivo</label>
-                <select class="form-select" @bind="Modelo.ConvenioId">
-                    <option value="0">-- Seleccione Convenio --</option>
-                    @if (convenios != null)
-                    {
-                        @foreach (var conv in convenios)
-                        {
-                            <option value="@conv.Id">@conv.Nombre</option>
-                        }
-                    }
-                </select>
-            </div>
         </div>
 
         <div class="text-end mt-4">
@@ -66,34 +52,7 @@
                             <th class="text-end pe-4">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @if (Modelo.Categorias != null && Modelo.Categorias.Any())
-                        {
-                            @foreach (var cat in Modelo.Categorias)
-                            {
-                                <tr>
-                                    <td class="ps-4 fw-bold">@cat.Nombre</td>
-                                    <td class="text-end fw-bold text-success">
-                                        $ @cat.SueldoBasico.ToString("N2")
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <a href="/configuracion/categorias/editar/@cat.Id"
-                                               class="btn btn-sm btn-light border">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="3" class="text-center py-5 text-muted">
-                                    <i class="bi bi-info-circle me-2"></i> No hay categorías asociadas a este cargo.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
+                  
                 </table>
             </div>
         </div>
@@ -124,12 +83,7 @@
 
     private async Task GuardarCargo()
     {
-        if (Modelo.ConvenioId == 0)
-        {
-            await JS.InvokeVoidAsync("Swal.fire", "Atención", "Debe seleccionar un convenio", "warning");
-            return;
-        }
-
+ 
         await base.Guardar();
     }
 }

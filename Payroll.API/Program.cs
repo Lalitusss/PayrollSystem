@@ -31,9 +31,9 @@ builder.Services.AddScoped<IBancoService, BancoService>();
 builder.Services.AddScoped<ICargoService, CargoService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IConvenioService, ConvenioService>();
-builder.Services.AddScoped<ITipoConceptoService, TipoConceptoService>();
 builder.Services.AddScoped<IObraSocialService, ObraSocialService>();
 builder.Services.AddScoped<IProvinciaService, ProvinciaService>();
+builder.Services.AddScoped<IVinculoConceptoService, VinculoConceptoService>();
 
 // 4. CONFIGURACIÓN DE CORS (Antes del build para asegurar disponibilidad)
 builder.Services.AddCors(options => {

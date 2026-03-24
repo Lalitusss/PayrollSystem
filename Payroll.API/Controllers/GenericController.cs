@@ -12,10 +12,16 @@ public abstract class GenericController<T, TDto> : ControllerBase
     where T : class, IEntity
 {
     protected readonly IGenericService<T> _service;
+    private IVinculoConceptoService service;
 
     protected GenericController(IGenericService<T> service)
     {
         _service = service;
+    }
+
+    protected GenericController(IVinculoConceptoService service)
+    {
+        this.service = service;
     }
 
     [HttpGet]

@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Payroll.Core.Entities;
+﻿using Payroll.Core.Entities;
 using Payroll.Data;
 using Payroll.Services.Interfaces;
 
@@ -12,15 +11,4 @@ public class ConceptoService
         : base(context)
     {
     }
-
-    //public override async Task UpdateAsync(Concepto concepto)
-    //{
-    //    var existing = await _context.Conceptos.FindAsync(concepto.Id);
-
-    //    if (existing != null)
-    //    {
-    //        _context.Entry(existing).CurrentValues.SetValues(concepto);
-    //        await _context.SaveChangesAsync();
-    //    }
-    //}
 }

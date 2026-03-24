@@ -1,135 +1,123 @@
 ﻿@page "/configuracion/categorias/nuevo"
 @page "/configuracion/categorias/editar/{Id:int}"
+@using Payroll.Services.DTOs
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Web
 @inherits BaseFormulario<CategoriaDto>
+@inject NavigationManager Navigation
 
-<div class="mb-4">
-    <button class="btn btn-link text-decoration-none p-0" @onclick="Cancelar">
-        <i class="bi bi-arrow-left"></i> Volver a la lista
-    </button>
-    <h3 class="fw-bold mt-2">@(Id == 0 ? "Nueva Categoría" : $"Editar Categoría: {Modelo.Nombre}")</h3>
-</div>
-
-@* --- BLOQUE 1: DATOS BÁSICOS (Guardado General) --- *@
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-body p-4">
-        <h5 class="fw-bold mb-3 text-secondary">Datos Generales</h5>
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Nombre de Categoría</label>
-                <input type="text" class="form-control" @bind="Modelo.Nombre" />
-            </div>
-            
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Cargo</label>
-                <select class="form-select" @bind="Modelo.CargoId">
-                    <option value="0">-- Seleccione --</option>
-                    @foreach (var car in cargos)
-                    {
-                        <option value="@car.Id">@car.Nombre</option>
-                    }
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Sueldo Básico ($)</label>
-                <input type="number" step="0.01" class="form-control" @bind="Modelo.SueldoBasico" />
-            </div>
+<div class="container mt-4">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <button class="btn btn-sm btn-link text-decoration-none p-0 text-secondary" @onclick="VolverAConvenios">
+                <i class="bi bi-arrow-left"></i> Volver a la Matriz de Convenios
+            </button>
+            <h3 class="fw-bold mt-2 text-dark">
+                <i class="bi bi-folder-plus me-2 text-primary"></i>
+                @(Id == 0 ? "Nueva Categoría" : $"Editar Categoría: {Modelo?.Nombre}")
+            </h3>
         </div>
         
-        <div class="text-end mt-4">
-            <button class="btn btn-primary px-4" @onclick="base.Guardar" disabled="@(!HuboCambios())">
-                <i class="bi bi-check-circle me-2"></i> Guardar Datos Básicos
-            </button>
-        </div>
+        @if (Id == 0 && Modelo?.ConvenioId != 0)
+        {
+            <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill">
+                <i class="bi bi-info-circle me-1"></i> Vinculando al Convenio #@Modelo?.ConvenioId
+            </span>
+        }
     </div>
-</div>
 
-@* --- BLOQUE 2: VÍNCULO CON CONCEPTOS (Guardado de Relación) --- *@
-@if (Id != 0)
-{
-    <div class="card shadow-sm border-0 border-top border-primary border-5">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold mb-0 text-primary">Vínculo con Conceptos Salariales</h5>
+    @if (Modelo == null)
+    {
+        <div class="text-center mt-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Cargando formulario...</p>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="Modelo" OnValidSubmit="GuardarYRegresar">
+            <DataAnnotationsValidator />
             
-            <div class="d-flex gap-2">
-                <select class="form-select form-select-sm" @bind="conceptoIdParaAgregar" style="width: 250px;">
-                    <option value="0">-- Buscar Concepto --</option>
-                    @foreach (var c in todosLosConceptos.Where(x => !Modelo.Conceptos.Any(m => m.Id == x.Id)))
-                    {
-                        <option value="@c.Id">@c.Nombre</option>
-                    }
-                </select>
-                <button class="btn btn-success btn-sm" @onclick="AgregarConcepto" disabled="@(conceptoIdParaAgregar == 0)">
-                    <i class="bi bi-plus-lg"></i>
-                </button>
-            </div>
-        </div>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        @* CAMPO: NOMBRE *@
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Nombre de la Categoría</label>
+                            <InputText class="form-control form-control-lg border-2"
+                                       @bind-Value="Modelo.Nombre"
+                                       placeholder="Ej: Administrativos, Maestranza, Vendedores..." />
+                            <ValidationMessage For="@(() => Modelo.Nombre)" class="text-danger small fw-bold" />
+                        </div>
 
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Concepto</th>
-                        <th>Tipo</th>
-                        <th class="text-end pe-4">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var concepto in Modelo.Conceptos)
-                    {
-                        <tr>
-                            <td class="ps-4 fw-bold">@concepto.Nombre</td>
-                            <td><span class="badge bg-light text-dark border">@concepto.TipoNombre</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm text-danger" @onclick="() => Modelo.Conceptos.Remove(concepto)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer bg-light text-end py-3">
-            <button class="btn btn-outline-primary" @onclick="GuardarConceptos">
-                <i class="bi bi-link-45deg me-2"></i> Actualizar Vínculos de Conceptos
-            </button>
-        </div>
-    </div>
-}
+                        @* CAMPO: CONVENIO (Visualización) *@
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-uppercase text-muted">ID Convenio</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-2"><i class="bi bi-hash"></i></span>
+                                <input type="text" class="form-control bg-light border-2" value="@Modelo.ConvenioId" disabled />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-end mt-5 border-top pt-4">
+                        <button type="button" class="btn btn-outline-secondary px-4 me-2 border-2" @onclick="VolverAConvenios">
+                            <i class="bi bi-x-lg me-1"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-lg px-5 shadow border-0">
+                            <i class="bi bi-check2-all me-2"></i> @(Id == 0 ? "Crear Categoría" : "Guardar Cambios")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    }
+</div>
 
 @code {
     protected override string ApiUrl => "categorias";
-    protected override string PageUrl => "/configuracion/categorias";
+    protected override string PageUrl => "/configuracion/convenios";
 
-    private List<CargoDto> cargos = new();
-    private List<ConceptoDto> todosLosConceptos = new();
-    private int conceptoIdParaAgregar;
-
-    protected override async Task OnInitializedAsync()
+    // Usamos OnParametersSetAsync porque se ejecuta DESPUÉS de OnInitialized
+    // y es donde Blazor termina de asentar los valores del Modelo.
+    protected override async Task OnParametersSetAsync()
     {
-        cargos = await Http.GetFromJsonAsync<List<CargoDto>>("api/cargos") ?? new();
-        todosLosConceptos = await Http.GetFromJsonAsync<List<ConceptoDto>>("api/conceptos") ?? new();
-        await base.OnInitializedAsync();
-    }
+        await base.OnParametersSetAsync();
 
-    private void AgregarConcepto()
-    {
-        var concepto = todosLosConceptos.FirstOrDefault(c => c.Id == conceptoIdParaAgregar);
-        if (concepto != null)
+        if (Id == 0)
         {
-            Modelo.Conceptos.Add(concepto);
-            conceptoIdParaAgregar = 0;
+            // 1. Forzamos la creación si la base lo dejó nulo
+            if (Modelo == null) Modelo = new CategoriaDto();
+
+            // 2. Capturamos el ID de la URL
+            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var cid = query.Get("convenioId");
+
+            if (!string.IsNullOrEmpty(cid) && int.TryParse(cid, out int convenioId))
+            {
+                // 3. Asignación directa al campo del Modelo
+                Modelo.ConvenioId = convenioId;
+                
+                // 4. Log de consola para que verifiques en F12
+                Console.WriteLine($"[DEBUG] ConvenioId asignado con éxito: {Modelo.ConvenioId}");
+                
+                // 5. Notificamos al UI del cambio
+                StateHasChanged();
+            }
         }
     }
 
-    private async Task GuardarConceptos()
+    private async Task GuardarYRegresar()
     {
-        // Extraemos solo los IDs de los conceptos seleccionados
-        var idsParaEnviar = Modelo.Conceptos.Select(c => c.Id).ToList();
+        if (Modelo == null || Modelo.ConvenioId == 0)
+        {
+            // Opcional: podrías mostrar una alerta aquí
+            return;
+        }
 
-        var response = await Http.PostAsJsonAsync($"api/categorias/{Id}/conceptos", idsParaEnviar);
-        if (response.IsSuccessStatusCode)
-            await JS.InvokeVoidAsync("Swal.fire", "Éxito", "Vínculos actualizados correctamente", "success");
+        await base.Guardar();
     }
+
+    private void VolverAConvenios() => Navigation.NavigateTo(PageUrl);
 }

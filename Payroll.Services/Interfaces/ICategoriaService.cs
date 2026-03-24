@@ -5,7 +5,6 @@ namespace Payroll.Services.Interfaces
 {
     public interface ICategoriaService : IGenericService<Categoria>
     {
-        Task ActualizarConceptosAsync(int categoriaId, List<int> conceptosIds);
-        Task<CategoriaDto> GetByIdConConceptosAsync(int id);
+        Task<IEnumerable<Categoria>> GetByConvenioAsync(int convenioId);
     }
 }

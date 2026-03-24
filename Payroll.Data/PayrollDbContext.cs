@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Payroll.Core.Entities;
+using Payroll.Domain.Entities;
 
 namespace Payroll.Data;
 
@@ -19,10 +20,10 @@ public class PayrollDbContext : DbContext
     public DbSet<Categoria> Categorias => Set<Categoria>();
     public DbSet<Provincia> Provincias => Set<Provincia>();
     public DbSet<Pais> Paises => Set<Pais>();
-    public DbSet<TipoConcepto> TiposConceptos => Set<TipoConcepto>();
     public DbSet<ObraSocial> ObrasSociales => Set<ObraSocial>();
     public DbSet<LiquidacionCabecera> LiquidacionesCabecera => Set<LiquidacionCabecera>();
     public DbSet<LiquidacionDetalle> LiquidacionesDetalle => Set<LiquidacionDetalle>();
+    public DbSet<VinculoConcepto> VinculosConceptos => Set<VinculoConcepto>();
     public DbSet<Sistema> Sistema => Set<Sistema>(); //Fix load
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,6 +32,9 @@ public class PayrollDbContext : DbContext
 
         modelBuilder.Entity<CategoriaConcepto>()
         .HasKey(cc => new { cc.CategoriaId, cc.ConceptoId });
+
+        modelBuilder.Entity<Categoria>().ToTable("Categorias");
+        modelBuilder.Entity<Cargo>().ToTable("Cargos");
 
         // Configuración de precisión decimal para .NET 10
         foreach (var property in modelBuilder.Model.GetEntityTypes()
@@ -58,5 +62,9 @@ public class PayrollDbContext : DbContext
             .HasMany(p => p.Familiar)
             .WithOne()
             .HasForeignKey(f => f.PersonaId);
+
+ 
+
+       
     }
 }

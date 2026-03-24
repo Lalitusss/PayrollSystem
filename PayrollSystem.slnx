@@ -2,6 +2,8 @@
   <Project Path="Payroll.API/Payroll.API.csproj" />
   <Project Path="Payroll.Core/Payroll.Core.csproj" />
   <Project Path="Payroll.Data/Payroll.Data.csproj" />
+  <Project Path="Payroll.Engine/Payroll.Engine.csproj" Id="99f12893-1787-4dab-8ce2-c2feb6fa4bf4" />
   <Project Path="Payroll.Services/Payroll.Services.csproj" />
+  <Project Path="Payroll.Test.Console/Payroll.Test.Console.csproj" Id="91f0d988-a273-404e-b47b-a087c2a8e7b1" />
   <Project Path="Payroll.Web/Payroll.Web.csproj" />
 </Solution>

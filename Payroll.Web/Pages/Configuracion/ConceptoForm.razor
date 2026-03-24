@@ -1,5 +1,9 @@
 ﻿@page "/configuracion/conceptos/nuevo"
 @page "/configuracion/conceptos/editar/{Id:int}"
+@using Payroll.Engine.Attributes
+@using Payroll.Engine.Constants
+@using System.Reflection
+@using System.ComponentModel
 @inherits BaseFormulario<ConceptoDto>
 
 <div class="mb-4">
@@ -11,73 +15,222 @@
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-4">
-        <div class="row g-3">
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Código</label>
-                <input type="text" class="form-control" @bind="Modelo.Codigo" @bind:event="oninput" />
-            </div>
-            <div class="col-md-6">
-                <label class="form-label fw-bold">Descripción</label>
-                <input type="text" class="form-control" @bind="Modelo.Descripcion" @bind:event="oninput" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Tipo</label>
-                <select class="form-select" @bind="Modelo.TipoConceptoId">
-                    <option value="0" disabled>Seleccione un tipo...</option>
-                    @if (tipos != null)
-                    {
-                        @foreach (var t in tipos)
+        <EditForm Model="Modelo" OnValidSubmit="Guardar">
+            <div class="row g-3">
+                @* --- LÍNEA 1: IDENTIFICACIÓN --- *@
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Código</label>
+                    <input type="text" class="form-control" @bind="Modelo.Codigo" placeholder="Ej: 1010" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Descripción</label>
+                    <input type="text" class="form-control" @bind="Modelo.Descripcion" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Tipo de Concepto</label>
+                    <select class="form-select" @onchange="OnTipoChanged">
+                        @foreach (var t in Enum.GetValues<TipoConcepto>())
                         {
-                            <option value="@t.Id">@t.Nombre</option>
+                            <option value="@t" selected="@(t == Modelo.Tipo)">@t.GetFriendlyName()</option>
                         }
-                    }
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Valor por Defecto</label>
-                <div class="input-group">
-                    <input type="number" step="0.01" class="form-control" @bind="Modelo.ValorDefecto" @bind:event="oninput" />
-                    <span class="input-group-text">@(Modelo.EsPorcentaje ? "%" : "$")</span>
+                    </select>
                 </div>
-            </div>
-            <div class="col-md-4 d-flex align-items-center">
-                <div class="form-check form-switch mt-4">
-                    @* El checkbox no necesita oninput, se vincula al instante *@
-                    <input class="form-check-input" type="checkbox" @bind="Modelo.EsPorcentaje" id="esPorc">
-                    <label class="form-check-label fw-bold" for="esPorc">¿Es Porcentaje?</label>
-                </div>
-            </div>
-        </div>
 
-        <div class="text-end mt-4">
-            <button class="btn btn-light me-2" @onclick="Cancelar">Cancelar</button>
-            <button class="btn btn-primary px-5" @onclick="Guardar" disabled="@(!HuboCambios())">
-                <i class="bi bi-save me-2"></i> Guardar
-            </button>
-        </div>
-    </div>
-</div>
+                @* --- LÍNEA 2: CÁLCULO Y VALOR --- *@
+                <div class="col-md-9">
+                    <div class="d-flex justify-content-between align-items-end mb-1">
+                        <label class="form-label fw-bold text-primary mb-0">
+                            Fórmula de Cálculo
+                            @if (!string.IsNullOrEmpty(Modelo.Formula))
+                            {
+                                <span class="badge @(EsFormulaValida ? "bg-success" : "bg-danger") ms-2" style="font-size: 0.7rem;">
+                                    @(EsFormulaValida ? "Sintaxis OK" : "Error de Corchetes")
+                                </span>
+                            }
+                        </label>
+                        
+                        <div class="dropdown" style="position: relative;">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" @onclick="ToggleDropdown" @onclick:stopPropagation>
+                                <i class="bi bi-magic me-1"></i> Insertar Función
+                            </button>
+                            
+                            <div class="dropdown-menu dropdown-menu-end shadow @(showDropdown ? "show" : "")"
+                                 style="display: @(showDropdown ? "block" : "none"); position: absolute; right: 0; max-height: 300px; overflow-y: auto; z-index: 1050; min-width: 280px;">
+                                
+                                @foreach (var grupo in FuncionesAgrupadas)
+                                {
+                                    <h6 class="dropdown-header bg-light">@grupo.Key</h6>
+                                    @foreach (var func in grupo.Value)
+                                    {
+                                        <button type="button" class="dropdown-item d-flex justify-content-between align-items-center"
+                                                @onclick="() => SeleccionarFuncion(func.Snippet)">
+                                            <span><b>@func.Snippet</b></span>
+                                            <small class="text-muted ms-2 italic">@func.Descripcion</small>
+                                        </button>
+                                    }
+                                    <div class="dropdown-divider"></div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <textarea class="form-control fw-mono" rows="2"
+                              @bind="Modelo.Formula" @bind:event="oninput"
+                              placeholder="Ej: @PayrollConstants.Functions.GetBasico * 0.15"></textarea>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Valor Base / Defecto</label>
+                    <div class="input-group">
+                        <input type="number" step="0.01" class="form-control" @bind="Modelo.ValorDefecto" />
+                        <span class="input-group-text">@(Modelo.EsPorcentaje ? "%" : "$")</span>
+                    </div>
+                </div>
+
+                @* --- LÍNEA 3: CONFIGURACIONES --- *@
+                <div class="col-12 d-flex gap-4 py-2 mt-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" @bind="Modelo.EsPorcentaje" id="esPorc">
+                            <label class="form-check-label fw-bold" for="esPorc">¿Es Porcentaje?</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" @bind="Modelo.EsTotalizador" id="esTot">
+                                <label class="form-check-label fw-bold" for="esTot">¿Es Totalizador?</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" @bind="Modelo.AfectaAguinaldo" id="sac">
+                                    <label class="form-check-label fw-bold" for="sac">Afecta SAC</label>
+                                </div>
+                                <div class="form-check form-switch ms-auto">
+                                    <input class="form-check-input" type="checkbox" @bind="Modelo.Activo" id="activo">
+                                        <label class="form-check-label fw-bold text-success" for="activo">Activo</label>
+                                    </div>
+                                </div>
+
+                                <hr class="my-2 text-muted" />
+
+                                @* --- LÍNEA 4: VIGENCIA --- *@
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Vigencia Desde</label>
+                                    <input type="date" class="form-control" @bind="Modelo.FechaVigenciaDesde" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Vigencia Hasta</label>
+                                    <input type="date" class="form-control" @bind="Modelo.FechaVigenciaHasta" />
+                                </div>
+                            </div>
+
+                            <div class="text-end mt-5">
+                                <button type="button" class="btn btn-light me-2" @onclick="Cancelar">Cancelar</button>
+                                <button type="submit" class="btn btn-primary px-5" disabled="@(!EsFormulaValida && !string.IsNullOrEmpty(Modelo.Formula))">
+                                    <i class="bi bi-save me-2"></i> Guardar
+                                </button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
 
 @code {
     protected override string ApiUrl => "conceptos";
     protected override string PageUrl => "/configuracion/conceptos";
 
-    private List<TipoConcepto>? tipos;
+    private bool EsFormulaValida => ValidarSintaxis(Modelo.Formula);
+    private bool showDropdown = false;
+
+    private record NodoFuncion(string Snippet, string Descripcion);
+    private Dictionary<string, List<NodoFuncion>> FuncionesAgrupadas = new();
 
     protected override async Task OnInitializedAsync()
     {
-        try
+        await base.OnInitializedAsync();
+        CargarFuncionesDesdeConstantes();
+        
+        if (Id == 0)
         {
-            tipos = await Http.GetFromJsonAsync<List<TipoConcepto>>("api/tiposconceptos");
-            if (Id == 0 && Modelo.TipoConceptoId == 0 && tipos?.Count > 0) 
-            {
-                Modelo.TipoConceptoId = tipos.First().Id;
-            }
+            Modelo.Tipo = TipoConcepto.Remunerativo;
+            Modelo.FechaVigenciaDesde = DateTime.Today;
+            Modelo.Activo = true;
+            ActualizarSugerencias();
         }
-        catch (Exception ex)
+    }
+
+    private void CargarFuncionesDesdeConstantes()
+    {
+        FuncionesAgrupadas.Clear();
+        var campos = typeof(PayrollConstants.Functions)
+            .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+            .Where(f => f.IsLiteral && !f.IsInitOnly);
+
+        foreach (var campo in campos)
         {
-            Console.WriteLine($"Error al cargar tipos: {ex.Message}");
-            tipos = new();
+            string valorConstante = campo.GetValue(null)?.ToString() ?? "";
+            
+            var descAttr = campo.GetCustomAttribute<DescriptionAttribute>();
+            string descVisual = descAttr?.Description ?? campo.Name;
+
+            var groupAttr = campo.GetCustomAttribute<PayrollGroupAttribute>();
+            string nombreGrupo = groupAttr?.Name ?? "Otras Funciones";
+
+            if (!FuncionesAgrupadas.ContainsKey(nombreGrupo))
+                FuncionesAgrupadas[nombreGrupo] = new List<NodoFuncion>();
+
+            // Ya no agregamos paréntesis aquí porque vienen en la constante
+            FuncionesAgrupadas[nombreGrupo].Add(new NodoFuncion(valorConstante, descVisual));
+        }
+    }
+
+    private void ToggleDropdown() => showDropdown = !showDropdown;
+
+    private void SeleccionarFuncion(string snippet)
+    {
+        // Insertamos el valor directamente como viene de la constante
+        InsertarEnFormula(snippet);
+        showDropdown = false;
+    }
+
+    private void OnTipoChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<TipoConcepto>(e.Value?.ToString(), out var nuevoTipo))
+        {
+            Modelo.Tipo = nuevoTipo;
+            ActualizarSugerencias();
+        }
+    }
+
+    private void InsertarEnFormula(string snippet)
+    {
+        if (string.IsNullOrWhiteSpace(Modelo.Formula))
+            Modelo.Formula = snippet;
+        else
+            Modelo.Formula += $" {snippet}";
+            
+        StateHasChanged();
+    }
+
+    private bool ValidarSintaxis(string formula)
+    {
+        if (string.IsNullOrEmpty(formula)) return true;
+        return formula.Count(f => f == '[') == formula.Count(f => f == ']');
+    }
+
+    private void ActualizarSugerencias()
+    {
+        int rangoBase = (int)Modelo.Tipo switch
+        {
+            1 => 0,
+            2 => 1000,
+            3 => 2000,
+            4 => 4000,
+            5 => 5000,
+            6 => 6000,
+            7 => 7000,
+            8 => 8000,
+            _ => 0
+        };
+
+        if (Id == 0)
+        {
+            Modelo.Codigo = rangoBase.ToString("D4");
         }
     }
 }
