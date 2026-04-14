@@ -18,20 +18,15 @@ public class VinculosConceptosController : GenericController<VinculoConcepto, Vi
         _vinculoService = service;
     }
 
-    // GET: api/vinculos/convenio/1
-    [HttpGet("convenio/{id}")]
-    public async Task<ActionResult<List<VinculoConceptoDto>>> GetPorConvenio(int id)
+    // Nueva ruta: api/vinculosconceptos/convenio/1/cargo/5
+    [HttpGet("convenio/{convenioId}/cargo/{cargoId}")]
+    public async Task<ActionResult<List<ConceptoDto>>> GetVinculos(int convenioId, int cargoId)
     {
-        var result = await _vinculoService.ObtenerPorEntidad(id, 1); // 1 = Convenio
-        return Ok(result);
-    }
+        var conceptos = await _vinculoService.ObtenerConvenioCargoConceptos(convenioId, cargoId);
 
-    // GET: api/vinculos/cargo/1
-    [HttpGet("cargo/{id}")]
-    public async Task<ActionResult<List<VinculoConceptoDto>>> GetPorCargo(int id)
-    {
-        var result = await _vinculoService.ObtenerPorEntidad(id, 3); // 3 = Cargo
-        return Ok(result);
+        // ERROR COMÚN: return conceptos == null ? NotFound() : Ok(conceptos);
+        // SOLUCIÓN:
+        return Ok(conceptos ?? new List<ConceptoDto>());
     }
 
     // GET: api/vinculos/maestro
@@ -49,7 +44,7 @@ public class VinculosConceptosController : GenericController<VinculoConcepto, Vi
         if (request == null || request.ConceptoIds == null)
             return BadRequest("Datos de vinculación inválidos.");
 
-        await _vinculoService.ActualizarVinculos(request.EntidadId, request.TipoEntidad, request.ConceptoIds);
+        await _vinculoService.ActualizarVinculos(request.ConvenioId, request.CargoId, request.ConceptoIds);
         return Ok();
     }
 
@@ -60,27 +55,12 @@ public class VinculosConceptosController : GenericController<VinculoConcepto, Vi
         var eliminado = await _vinculoService.EliminarVinculo(id);
         return eliminado ? Ok() : NotFound();
     }
-
-    [HttpGet("mezclados/{convenioId}")]
-    public async Task<ActionResult<List<VinculoConceptoDto>>> GetMezclados(int convenioId, [FromQuery] int? cargoId = null)
-    {
-        try
-        {
-            // Llamamos al service que acabamos de crear/modificar
-            var resultados = await _vinculoService.ObtenerVinculosMezclados(convenioId, cargoId);
-            return Ok(resultados);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Error al obtener conceptos: {ex.Message}");
-        }
-    }
 }
 
 // DTO para el POST (puedes dejarlo aquí o llevarlo a Payroll.Services.DTOs)
 public class VinculacionRequest
 {
-    public int EntidadId { get; set; }
-    public int TipoEntidad { get; set; }
+    public int ConvenioId { get; set; }
+    public int CargoId { get; set; }
     public List<int> ConceptoIds { get; set; } = new();
 }

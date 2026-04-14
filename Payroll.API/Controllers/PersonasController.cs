@@ -33,4 +33,18 @@ public class PersonasController
         return Ok(dto);
     }
 
+    [HttpGet("buscar/{termino}")]
+    public async Task<ActionResult<List<PersonalDto>>> BuscarParaAsignacion(string termino)
+    {
+        // ProjectToType genera el SQL optimizado (SELECT Id, Nombre, Apellido, Cuil...)
+        var dtos = await _service.GetQueryable()
+            .Where(p => p.Apellido.Contains(termino) ||
+                        p.Nombre.Contains(termino) ||
+                        p.CUIL.Contains(termino))
+            .Take(10)
+            .ProjectToType<PersonalDto>() // <--- Magia de Mapster
+            .ToListAsync();
+
+        return Ok(dtos);
+    }
 }

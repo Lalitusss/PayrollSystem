@@ -7,11 +7,9 @@
         public string NombreConcepto { get; set; } = string.Empty;
         public string Formula { get; set; } = string.Empty;
         public string TipoConcepto { get; set; } = string.Empty;
+        public int ConvenioId { get; set; }
+        public int CargoId { get; set; } 
 
-        public int EntidadId { get; set; }
-        public int TipoEntidad { get; set; } // 1=Convenio, 3=Cargo (usando tu Enum)
-
-        // Campos extra que definimos en la tabla SQL por si los necesitás mostrar
         public decimal? ValorPersonalizado { get; set; }
         public string? FormulaOverride { get; set; }
     }

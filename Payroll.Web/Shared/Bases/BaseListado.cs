@@ -87,6 +87,35 @@ public abstract class BaseListado<T> : ComponentBase where T : class
         }
     }
 
+    // En BaseListado.cs
+    protected async Task<bool> Confirmar(string titulo, string mensaje, string icon = "warning")
+    {
+        var result = await JS.InvokeAsync<SweetAlertResult>("Swal.fire", new
+        {
+            title = titulo,
+            text = mensaje,
+            icon = icon,
+            showCancelButton = true,
+            confirmButtonColor = "#d33",
+            cancelButtonColor = "#6c757d",
+            confirmButtonText = "Sí, proceder",
+            cancelButtonText = "Cancelar"
+        });
+        return result.IsConfirmed;
+    }
+
+    protected async Task NotificarSuccess(string mensaje)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = mensaje,
+            icon = "success",
+            timer = 1500,
+            showConfirmButton = false,
+            toast = true,
+            position = "top-end"
+        });
+    }
     protected void IrANuevo() => Nav.NavigateTo($"{PageUrl}/nuevo");
     protected void IrAEditar(int id) => Nav.NavigateTo($"{PageUrl}/editar/{id}");
 

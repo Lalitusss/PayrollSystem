@@ -3,11 +3,12 @@
 @inherits BaseListado<ConvenioDto>
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <div class="container-fluid h-100 mt-2">
     <div class="row h-100 g-3">
         
-        @* COLUMNA 1: CONVENIOS (Sin cambios) *@
+        @* COLUMNA 1: CONVENIOS *@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
@@ -35,7 +36,7 @@
             </div>
         </div>
 
-        @* COLUMNA 2: CATEGORÍAS Y CARGOS (Sin cambios) *@
+        @* COLUMNA 2: CATEGORÍAS Y CARGOS *@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-secondary text-white py-3 d-flex justify-content-between align-items-center">
@@ -48,86 +49,76 @@
                         </button>
                     }
                 </div>
-                <div class="card-body p-0 scroll-column">
-                    @if (CargandoCategorias)
+                <div class="card-body p-0 scroll-column d-flex flex-column">
+                    @if (ConvenioSeleccionado == null)
                     {
-                        <div class="text-center mt-5">
-                            <div class="spinner-border text-secondary" role="status"></div>
+                        <div class="text-center my-auto p-4 animate-fade-in">
+                            <i class="bi bi-arrow-left-circle text-muted mb-3" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                            <p class="text-muted small fw-bold">Seleccione un convenio para ver sus categorías</p>
                         </div>
                     }
-                    else if (ConvenioSeleccionado != null)
+                    else if (CargandoCategorias)
                     {
-                        @if (CategoriasDelConvenio?.Any() == true)
-                        {
-                            @foreach (var cat in CategoriasDelConvenio)
-                            {
-                                var estaAbierto = CategoriasAbiertas.Contains(cat.Id);
-                                <div class="categoria-group border-bottom">
-                                    <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center pointer" 
-                                         @onclick="() => ToggleCategoria(cat.Id)">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi @(estaAbierto ? "bi-chevron-down" : "bi-chevron-right") me-2 text-muted" style="font-size: 0.7rem;"></i>
-                                            <h6 class="text-dark small fw-bold mb-0 text-uppercase">@cat.Nombre</h6>
-                                            <span class="badge rounded-pill bg-secondary-subtle text-secondary ms-2" style="font-size: 0.65rem;">
-                                                @(cat.Cargos?.Count ?? 0)
-                                            </span>
-                                        </div>
-                                        <button class="btn btn-sm text-primary p-0" 
-                                                @onclick:stopPropagation="true" 
-                                                @onclick="() => NuevoCargo(cat)" title="Agregar Cargo">
-                                            <i class="bi bi-plus-circle-fill"></i>
-                                        </button>
-                                    </div>
-
-                                    @if (estaAbierto)
-                                    {
-                                        <div class="list-group list-group-flush animate-fade-in">
-                                            @if (cat.Cargos?.Any() == true)
-                                            {
-                                                @foreach (var cargo in cat.Cargos)
-                                                {
-                                                    <button @onclick="() => SeleccionarCargo(cargo)" 
-                                                            class="list-group-item list-group-item-action py-2 ps-4 border-0 @(CargoSeleccionado?.Id == cargo.Id ? "bg-primary-subtle fw-bold border-start border-primary border-4" : "small text-muted")">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span>@cargo.Nombre</span>
-                                                            <span style="font-size: 0.7rem;">$ @cargo.SueldoBasico.ToString("N2")</span>
-                                                        </div>
-                                                    </button>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <div class="py-2 ps-4 small text-muted italic">Sin cargos cargados.</div>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="text-center mt-5 text-muted p-4 small">
-                                <i class="bi bi-info-circle d-block mb-2 fs-2"></i> No hay categorías para este convenio.
-                            </div>
-                        }
+                        <div class="text-center my-auto"><div class="spinner-border text-secondary" role="status"></div></div>
                     }
                     else
                     {
-                        <div class="text-center mt-5 text-muted p-4 small">
-                            <i class="bi bi-arrow-left-circle d-block mb-2 fs-2"></i> Seleccione un convenio.
-                        </div>
+                        @foreach (var cat in CategoriasDelConvenio)
+                        {
+                            var estaAbierto = CategoriaAbiertaId == cat.Id;
+                            var cantidadCargos = cat.Cargos?.Count ?? 0;
+                            <div class="categoria-group border-bottom">
+                                <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center pointer" 
+                                     @onclick="() => ToggleCategoria(cat.Id)">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi @(estaAbierto ? "bi-chevron-down" : "bi-chevron-right") me-2 text-muted" style="font-size: 0.7rem;"></i>
+                                        <h6 class="text-dark small fw-bold mb-0 text-uppercase">
+                                            @cat.Nombre 
+                                            <span class="badge rounded-pill bg-secondary ms-2" style="font-size: 0.6rem;">@cantidadCargos</span>
+                                        </h6>
+                                    </div>
+                                    <button class="btn btn-sm text-primary p-0" @onclick:stopPropagation="true" @onclick="() => AbrirNuevoCargo(cat)">
+                                        <i class="bi bi-plus-circle-fill"></i>
+                                    </button>
+                                </div>
+                                @if (estaAbierto)
+                                {
+                                    <div class="list-group list-group-flush animate-fade-in">
+                                        @foreach (var cargo in cat.Cargos ?? Enumerable.Empty<CargoDto>())
+                                        {
+                                            <div @onclick="() => SeleccionarCargo(cargo)" 
+                                                 class="list-group-item list-group-item-action py-2 ps-4 border-0 d-flex justify-content-between align-items-center @(CargoSeleccionado?.Id == cargo.Id ? "bg-primary-subtle fw-bold border-start border-primary border-4" : "small text-muted")"
+                                                 style="cursor:pointer">
+                                                
+                                                <div class="flex-grow-1">
+                                                    <span class="d-block">@cargo.Nombre</span>
+                                                    <span class="text-primary" style="font-size: 0.7rem;">$ @cargo.SueldoBasico.ToString("N2")</span>
+                                                </div>
+
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm text-secondary p-1" @onclick:stopPropagation="true" @onclick="() => AbrirEditarCargo(cargo)">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm text-danger p-1" @onclick:stopPropagation="true" @onclick="() => EliminarCargo(cargo)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
                     }
                 </div>
             </div>
         </div>
 
-        @* COLUMNA 3: CONCEPTOS VINCULADOS (MODIFICADA) *@
+        @* COLUMNA 3: CONCEPTOS VINCULADOS *@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-info text-white py-3 d-flex justify-content-between align-items-center">
-                    <span class="fw-bold text-dark text-uppercase small">
-                        Conceptos Vinculados
-                    </span>
+                    <span class="fw-bold text-dark text-uppercase small">Conceptos Vinculados</span>
                     @if (ConvenioSeleccionado != null)
                     {
                         <button class="btn btn-dark rounded-circle d-flex align-items-center justify-content-center" 
@@ -136,49 +127,85 @@
                         </button>
                     }
                 </div>
-                <div class="card-body p-0">
-                    @if (ConvenioSeleccionado != null)
+                <div class="card-body p-0 d-flex flex-column">
+                    @if (ConvenioSeleccionado == null)
+                    {
+                        <div class="text-center my-auto p-5 animate-fade-in">
+                            <div class="mb-3">
+                                <i class="bi bi-layers text-info" style="font-size: 3rem; opacity: 0.3;"></i>
+                            </div>
+                            <h5 class="text-muted fw-light">Configuración de Conceptos</h5>
+                            <p class="text-muted small">Seleccione un convenio o cargo para gestionar sus fórmulas y conceptos</p>
+                        </div>
+                    }
+                    else
                     {
                         <div class="bg-success text-white p-2 text-center small fw-bold text-uppercase">
-                            @(CargoSeleccionado != null ? $"Cargo: {CargoSeleccionado.Nombre}" : $"Convenio: {ConvenioSeleccionado.Nombre}")
+                            @(CargoSeleccionado != null ? $"Cargo: {CargoSeleccionado.Nombre}" : $"General del Convenio: {ConvenioSeleccionado.Nombre}")
                         </div>
                         
-                        <div class="p-0 scroll-column">
+                        <div class="p-0 scroll-column flex-grow-1">
                             @if (CargandoConceptos)
                             {
                                 <div class="text-center mt-5"><div class="spinner-border spinner-border-sm text-primary"></div></div>
                             }
-                            else if (ConceptosVinculados.Any())
+                            else if (!ConceptosVinculados.Any())
+                            {
+                                <div class="text-center my-auto p-4">
+                                    <i class="bi bi-exclamation-circle text-warning mb-2" style="font-size: 2rem;"></i>
+                                    <p class="text-muted small">No hay conceptos vinculados aún.</p>
+                                    <button class="btn btn-sm btn-outline-primary mt-2" @onclick="AbrirModalVinculacion">Vincular ahora</button>
+                                </div>
+                            }
+                            else
                             {
                                 <table class="table table-sm table-hover mb-0">
-                                    <thead class="bg-light">
+                                    <thead class="bg-light sticky-top">
                                         <tr>
-                                            <th class="ps-3 small">Concepto</th>
+                                            <th class="ps-3 small">Código</th>
+                                            <th class="small">Concepto</th>
                                             <th class="small text-center">Tipo</th>
                                             <th class="small text-center">Origen</th>
                                             <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                       @foreach (var v in ConceptosVinculados)
+                                        @foreach (var v in ConceptosVinculados)
                                         {
                                             <tr class="align-middle">
-                                                <td class="ps-3">
-                                                    @* Quitamos el div de la fórmula y dejamos solo el nombre *@
-                                                    <div class="fw-bold small">@v.NombreConcepto</div>
-                                                </td>
-                                                <td class="text-center small">@v.TipoConcepto</td>
-                                                <td class="text-center small">
-                                                    <span class="badge @(v.TipoEntidad == 1 ? "bg-dark" : "bg-primary")">
-                                                        @(v.TipoEntidad == 1 ? "Convenio" : "Cargo")
-                                                    </span>
+                                                <td class="ps-3 small text-muted">@v.Codigo</td>
+                                                <td><div class="fw-bold small">@v.Descripcion</div></td>
+                                                <td class="text-center small">@v.Tipo</td>
+                                                <td class="text-center">
+                                                    @if (v.CargoId == 0 || v.CargoId == null)
+                                                    {
+                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary" style="font-size: 0.6rem;">CONVENIO</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary" style="font-size: 0.6rem;">CARGO</span>
+                                                    }
                                                 </td>
                                                 <td class="text-end pe-3">
-                                                    @if ( (CargoSeleccionado != null && v.TipoEntidad == 3) || (CargoSeleccionado == null && v.TipoEntidad == 1) )
+                                                    @* Si no hay cargo seleccionado, solo puedo borrar lo que es del convenio (CargoId 0 o null) *@
+                                                    @* Si hay un cargo seleccionado, solo puedo borrar lo que es propio de ese cargo *@
+    
+                                                    @if (CargoSeleccionado == null && (v.CargoId == 0 || v.CargoId == null))
                                                     {
-                                                        <button class="btn btn-sm text-danger" @onclick="() => EliminarVinculo(v.Id)">
+                                                        <button class="btn btn-sm text-danger" @onclick="() => EliminarVinculo(v)">
                                                             <i class="bi bi-trash"></i>
                                                         </button>
+                                                    }
+                                                    else if (CargoSeleccionado != null && v.CargoId == CargoSeleccionado.Id)
+                                                    {
+                                                        <button class="btn btn-sm text-danger" @onclick="() => EliminarVinculo(v)">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        @* Mostramos el candado para conceptos heredados *@
+                                                        <i class="bi bi-lock-fill text-muted small" title="Este concepto viene del convenio y no puede borrarse desde el cargo"></i>
                                                     }
                                                 </td>
                                             </tr>
@@ -186,31 +213,16 @@
                                     </tbody>
                                 </table>
                             }
-                            else
-                            {
-                                <div class="text-center mt-5 text-muted p-4 small italic">
-                                    No hay conceptos vinculados. Haga clic en "+" para agregar.
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center mt-5 text-muted p-4">
-                            <i class="bi bi-gear-wide-connected d-block mb-2 fs-2"></i> Seleccione un convenio o cargo para ver los conceptos.
                         </div>
                     }
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
-@* --- POPUPS (Sin cambios) --- *@
-
-<ModalGenerico Titulo="Nuevo Convenio" Mostrar="mostrarModalConvenio" Cargando="procesando"
-                OnCancelar="() => mostrarModalConvenio = false" OnConfirmar="GuardarConvenio">
+@* --- MODALES --- *@
+<ModalGenerico Titulo="Nuevo Convenio" Mostrar="mostrarModalConvenio" Cargando="procesando" OnCancelar="() => mostrarModalConvenio = false" OnConfirmar="GuardarConvenio">
     <div class="col-12">
         <label class="form-label small fw-bold">Nombre del Convenio</label>
         <input type="text" class="form-control" @bind="nuevoConvenio.Nombre" />
@@ -221,17 +233,28 @@
     </div>
 </ModalGenerico>
 
-<ModalGenerico Titulo="@($"Nueva Categoría para {ConvenioSeleccionado?.Nombre}")" 
-               Mostrar="mostrarModalCategoria" Cargando="procesando"
-               OnCancelar="() => mostrarModalCategoria = false" OnConfirmar="GuardarCategoria">
+<ModalGenerico Titulo="@($"Nueva Categoría para {ConvenioSeleccionado?.Nombre}")" Mostrar="mostrarModalCategoria" Cargando="procesando" OnCancelar="() => mostrarModalCategoria = false" OnConfirmar="GuardarCategoria">
     <div class="col-12">
         <label class="form-label small fw-bold">Nombre de la Categoría</label>
         <input type="text" class="form-control" @bind="nuevaCategoria.Nombre" />
     </div>
 </ModalGenerico>
 
-<ModalGenerico Titulo="Vincular Conceptos Maestros" Mostrar="mostrarModalVinculacion" Cargando="procesando"
-               OnCancelar="() => mostrarModalVinculacion = false" OnConfirmar="GuardarVinculos">
+<ModalGenerico Titulo="@(cargoParaEditar.Id == 0 ? "Nuevo Cargo" : "Editar Cargo")" Mostrar="mostrarModalCargo" Cargando="procesando" OnCancelar="() => mostrarModalCargo = false" OnConfirmar="GuardarCargo">
+    <div class="col-12">
+        <label class="form-label small fw-bold text-uppercase" style="font-size: 0.7rem;">Nombre del Cargo</label>
+        <input type="text" class="form-control form-control-sm" @bind="cargoParaEditar.Nombre" />
+    </div>
+    <div class="col-12">
+        <label class="form-label small fw-bold text-uppercase" style="font-size: 0.7rem;">Sueldo Básico</label>
+        <div class="input-group input-group-sm">
+            <span class="input-group-text">$</span>
+            <input type="number" class="form-control" @bind="cargoParaEditar.SueldoBasico" step="0.01" />
+        </div>
+    </div>
+</ModalGenerico>
+
+<ModalGenerico Titulo="Vincular Conceptos Maestros" Mostrar="mostrarModalVinculacion" Cargando="procesando" OnCancelar="() => mostrarModalVinculacion = false" OnConfirmar="GuardarVinculos">
     <div class="col-12">
         <div class="list-group shadow-sm scroll-column" style="max-height: 350px;">
             @foreach (var c in MaestroConceptos)
@@ -249,13 +272,9 @@
 
 <style>
     .scroll-column { max-height: 80vh; overflow-y: auto; }
-    .active i { color: white !important; }
     .pointer { cursor: pointer; }
     .animate-fade-in { animation: fadeIn 0.2s ease-in; }
-    @@keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
 @code {
@@ -264,41 +283,36 @@
     private CargoDto? CargoSeleccionado; 
     private bool CargandoCategorias = false;
     private bool CargandoConceptos = false;
-    private HashSet<int> CategoriasAbiertas = new();
-    private List<VinculoConceptoDto> ConceptosVinculados = new();
+    private int? CategoriaAbiertaId; 
+
+    private List<ConceptoDto> ConceptosVinculados = new(); 
     private List<ConceptoSeleccionableDto> MaestroConceptos = new();
 
     private bool mostrarModalConvenio = false;
     private bool mostrarModalCategoria = false;
+    private bool mostrarModalCargo = false;
     private bool mostrarModalVinculacion = false;
     private bool procesando = false;
+    
     private ConvenioDto nuevoConvenio = new();
     private CategoriaDto nuevaCategoria = new();
+    private CargoDto cargoParaEditar = new();
 
     protected override string PageUrl => "/configuracion/convenios";
 
-    private void ToggleCategoria(int id)
-    {
-        if (CategoriasAbiertas.Contains(id)) CategoriasAbiertas.Remove(id);
-        else CategoriasAbiertas.Add(id);
-    }
+    private void ToggleCategoria(int id) => CategoriaAbiertaId = CategoriaAbiertaId == id ? null : id;
 
     private async Task SeleccionarConvenio(ConvenioDto c)
     {
         ConvenioSeleccionado = c;
         CargoSeleccionado = null; 
         CategoriasDelConvenio = new();
-        CategoriasAbiertas.Clear();
+        CategoriaAbiertaId = null;
         CargandoCategorias = true;
-        
         await CargarConceptosColumna3();
-
         try {
-            var response = await Http.GetFromJsonAsync<List<CategoriaDto>>($"api/categorias/convenio/{c.Id}");
-            if (response != null) CategoriasDelConvenio = response;
-        }
-        catch (Exception ex) { Console.WriteLine($"Error cargando categorías: {ex.Message}"); }
-        finally { CargandoCategorias = false; }
+            CategoriasDelConvenio = await Http.GetFromJsonAsync<List<CategoriaDto>>($"api/categorias/convenio/{c.Id}") ?? new();
+        } finally { CargandoCategorias = false; }
     }
 
     private async Task SeleccionarCargo(CargoDto cargo) 
@@ -311,46 +325,60 @@
     {
         if (ConvenioSeleccionado == null) return;
         CargandoConceptos = true;
-        try {
-            // USAMOS EL NUEVO ENDPOINT MEZCLADO
-            string url = $"api/VinculosConceptos/mezclados/{ConvenioSeleccionado.Id}";
-            if (CargoSeleccionado != null) url += $"?cargoId={CargoSeleccionado.Id}";
-            
-            ConceptosVinculados = await Http.GetFromJsonAsync<List<VinculoConceptoDto>>(url) ?? new();
+        ConceptosVinculados = new(); 
+    
+        try 
+        {
+            int idCargo = CargoSeleccionado?.Id ?? 0;
+            string url = $"api/VinculosConceptos/convenio/{ConvenioSeleccionado.Id}/cargo/{idCargo}";
+            var resultado = await Http.GetFromJsonAsync<List<ConceptoDto>>(url);
+            ConceptosVinculados = resultado ?? new List<ConceptoDto>();
         } 
-        catch (Exception ex) { Console.WriteLine($"Error cargando conceptos: {ex.Message}"); }
+        catch (Exception ex) 
+        {
+            ConceptosVinculados = new List<ConceptoDto>();
+            Console.WriteLine($"Error: {ex.Message}");
+        }
         finally { CargandoConceptos = false; }
     }
 
     private async Task AbrirModalVinculacion()
     {
         if (ConvenioSeleccionado == null) return;
-        
         procesando = true;
         try {
-            var todos = await Http.GetFromJsonAsync<List<ConceptoSeleccionableDto>>("api/VinculosConceptos/maestro");
-            MaestroConceptos = todos ?? new();
+            // Traemos todos los conceptos posibles
+            var maestroOriginal = await Http.GetFromJsonAsync<List<ConceptoSeleccionableDto>>("api/VinculosConceptos/maestro") ?? new();
+        
+            // FILTRO LÓGICO:
+            // 1. Obtenemos los IDs de conceptos que YA están en la lista actual (heredados o propios)
+            var idsYaVinculados = ConceptosVinculados.Select(v => v.Id).ToList();
+
+            // 2. Filtramos el maestro para mostrar solo lo que NO está en la lista
+            // Esto evita que asignes al cargo algo que ya viene por convenio
+            MaestroConceptos = maestroOriginal
+                .Where(m => !idsYaVinculados.Contains(m.Id))
+                .ToList();
+
             mostrarModalVinculacion = true;
-        } 
-        catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
-        finally { procesando = false; }
+        } finally { procesando = false; }
     }
 
     private async Task GuardarVinculos()
     {
         var seleccionados = MaestroConceptos.Where(x => x.Seleccionado).Select(x => x.Id).ToList();
-        if (!seleccionados.Any() || ConvenioSeleccionado == null) return;
-
+        if (ConvenioSeleccionado == null) return;
+        
         procesando = true;
         try {
             var command = new {
                 ConceptoIds = seleccionados,
-                EntidadId = CargoSeleccionado?.Id ?? ConvenioSeleccionado.Id,
-                TipoEntidad = CargoSeleccionado != null ? 3 : 1 
+                ConvenioId = ConvenioSeleccionado.Id,
+                CargoId = CargoSeleccionado?.Id ?? 0 
             };
 
-            var res = await Http.PostAsJsonAsync("api/VinculosConceptos/vincular", command);
-            if (res.IsSuccessStatusCode) {
+            var response = await Http.PostAsJsonAsync("api/VinculosConceptos/vincular", command);
+            if (response.IsSuccessStatusCode) {
                 mostrarModalVinculacion = false;
                 await CargarConceptosColumna3();
             }
@@ -358,7 +386,7 @@
     }
 
     private void IrANuevo() { nuevoConvenio = new(); mostrarModalConvenio = true; }
-
+    
     private void NuevaCategoria() {
         if (ConvenioSeleccionado != null) {
             nuevaCategoria = new() { ConvenioId = ConvenioSeleccionado.Id };
@@ -366,40 +394,80 @@
         }
     }
 
-    private void NuevoCargo(CategoriaDto cat) => Navigation.NavigateTo($"/configuracion/cargos/nuevo?categoriaId={cat.Id}");
+    private void AbrirNuevoCargo(CategoriaDto cat) {
+        cargoParaEditar = new CargoDto { CategoriaId = cat.Id, SueldoBasico = 0 };
+        mostrarModalCargo = true;
+    }
+
+    private void AbrirEditarCargo(CargoDto cargo) {
+        cargoParaEditar = new CargoDto { 
+            Id = cargo.Id, 
+            Nombre = cargo.Nombre, 
+            SueldoBasico = cargo.SueldoBasico, 
+            CategoriaId = cargo.CategoriaId 
+        };
+        mostrarModalCargo = true;
+    }
+
+    private async Task GuardarCargo() {
+        if (string.IsNullOrWhiteSpace(cargoParaEditar.Nombre)) return;
+        procesando = true;
+        try {
+            HttpResponseMessage response = cargoParaEditar.Id == 0 
+                ? await Http.PostAsJsonAsync("api/cargos", cargoParaEditar)
+                : await Http.PutAsJsonAsync($"api/cargos/{cargoParaEditar.Id}", cargoParaEditar);
+
+            if (response.IsSuccessStatusCode) {
+                mostrarModalCargo = false;
+                if (ConvenioSeleccionado != null) await SeleccionarConvenio(ConvenioSeleccionado);
+            }
+        } finally { procesando = false; }
+    }
+
+    private async Task EliminarCargo(CargoDto cargo)
+    {
+        // Reutilizamos la base para preguntar
+        if (await Confirmar("¿Eliminar Cargo?", $"Vas a borrar '{cargo.Nombre}'")) 
+        {
+            var response = await Http.DeleteAsync($"api/cargos/{cargo.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await NotificarSuccess("Cargo eliminado"); // Reutilizamos la base para el brindis
+                if (ConvenioSeleccionado != null) await SeleccionarConvenio(ConvenioSeleccionado);
+            }
+        }
+    }
 
     private async Task GuardarConvenio() {
         if (string.IsNullOrEmpty(nuevoConvenio.Nombre)) return;
-
         procesando = true;
-        var res = await Http.PostAsJsonAsync("api/convenios", nuevoConvenio);
-        if (res.IsSuccessStatusCode) {
+        if ((await Http.PostAsJsonAsync("api/convenios", nuevoConvenio)).IsSuccessStatusCode) {
             mostrarModalConvenio = false;
-            await CargarDatos(); 
+            await OnInitializedAsync();
         }
         procesando = false;
     }
 
-    private async Task CargarDatos() => await OnInitializedAsync();
-
     private async Task GuardarCategoria() {
         if (string.IsNullOrEmpty(nuevaCategoria.Nombre) || ConvenioSeleccionado == null) return;
-
         procesando = true;
-        var res = await Http.PostAsJsonAsync("api/categorias", nuevaCategoria);
-        if (res.IsSuccessStatusCode) {
+        if ((await Http.PostAsJsonAsync("api/categorias", nuevaCategoria)).IsSuccessStatusCode) {
             mostrarModalCategoria = false;
             await SeleccionarConvenio(ConvenioSeleccionado);
         }
         procesando = false;
     }
 
-    private async Task EliminarVinculo(int id) 
+    private async Task EliminarVinculo(ConceptoDto v)
     {
-        var response = await Http.DeleteAsync($"api/VinculosConceptos/{id}");
-        if (response.IsSuccessStatusCode)
+        if (await Confirmar("¿Desvincular?", $"¿Quitar '{v.Descripcion}'?")) 
         {
-            await CargarConceptosColumna3();
+            var response = await Http.DeleteAsync($"api/VinculosConceptos/{v.VinculoConceptoId}");
+            if (response.IsSuccessStatusCode)
+            {
+                await NotificarSuccess("Concepto desvinculado");
+                await CargarConceptosColumna3();
+            }
         }
     }
 }

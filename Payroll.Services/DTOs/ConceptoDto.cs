@@ -23,4 +23,7 @@ public class ConceptoDto
 
     // ESTA ES LA QUE TE FALTA Y CAUSA EL ERROR:
     public bool Activo { get; set; } = true;
+    public int? CargoId { get; set; }
+    public int? VinculoConceptoId { get; set; }
+
 }

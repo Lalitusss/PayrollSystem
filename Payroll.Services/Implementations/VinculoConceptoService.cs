@@ -19,34 +19,91 @@ public class VinculoConceptoService : GenericService<VinculoConcepto>, IVinculoC
         _context = context;
     }
 
-    public async Task<List<VinculoConceptoDto>> ObtenerPorEntidad(int entidadId, int tipoEntidad)
+    public async Task<List<ConceptoDto>> ObtenerConvenioCargoConceptos(int convenioId, int cargoId)
     {
-        return await _context.VinculosConceptos
-            .Include(v => v.Concepto)
-            .Where(v => v.EntidadId == entidadId && v.TipoEntidad == tipoEntidad)
-            // ProjectToType es de Mapster y es más eficiente que el Select manual
-            .ProjectToType<VinculoConceptoDto>()
+        // Usamos .AsNoTracking() para mejorar performance en consultas de solo lectura
+        var query = _context.VinculosConceptos
+            .Include(v => v.Concepto) // Esto es vital para traer la tabla Conceptos
+            .Where(v => v.ConvenioId == convenioId && v.Activo);
+
+        // Lógica mixta según tus capturas de SQL
+        if (cargoId > 0)
+        {
+            // Traemos lo específico del cargo seleccionado (ej: 1 o 3) 
+            // MAS lo que sea general (CargoId 0 o NULL)
+            query = query.Where(v => v.CargoId == cargoId || v.CargoId == 0 || v.CargoId == null);
+        }
+        else
+        {
+            query = query.Where(v => v.CargoId == 0 || v.CargoId == null);
+        }
+
+        return await query
+            .Select(v => new ConceptoDto
+            {
+                Id = v.ConceptoId,
+                Codigo = v.Concepto.Codigo,
+                // Accedemos directamente a la propiedad de la tabla vinculada
+                Descripcion = v.Concepto.Descripcion,
+
+                // Si el vínculo tiene una fórmula específica (Override), la usamos.
+                // Si no, usamos la fórmula que configuraste en la pantalla de "Editar Concepto" (GET_BASICO())
+                Formula = !string.IsNullOrEmpty(v.FormulaOverride) ? v.FormulaOverride : v.Concepto.Formula,
+
+                Tipo = v.Concepto.Tipo,
+
+                // IMPORTANTE: En el motor de liquidación, usá el Orden del MAESTRO 
+                // para mantener la jerarquía legal (Haberes -> Deducciones)
+                Orden = v.Concepto.Orden,
+
+                // Datos adicionales de la tabla Conceptos que veo en tu SQL
+                EsPorcentaje = v.Concepto.EsPorcentaje,
+                ValorDefecto = v.Concepto.ValorDefecto,
+                CargoId = v.CargoId,
+                VinculoConceptoId = v.Id
+            })
+            .OrderBy(c => c.Codigo)
+            .ThenBy(c => c.Orden)
             .ToListAsync();
     }
 
-    public async Task ActualizarVinculos(int entidadId, int tipoEntidad, List<int> conceptoIds)
+    public async Task ActualizarVinculos(int convenioId, int cargoId, List<int> conceptoIds)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
+            // 1. Buscamos qué conceptos ya están vinculados al CONVENIO (CargoId 0 o null)
+            // Solo si estamos intentando actualizar un CARGO específico.
+            var idsEnConvenio = new List<int>();
+            if (cargoId > 0)
+            {
+                idsEnConvenio = await _context.VinculosConceptos
+                    .Where(v => v.ConvenioId == convenioId && (v.CargoId == 0 || v.CargoId == null))
+                    .Select(v => v.ConceptoId)
+                    .ToListAsync();
+            }
+
+            // 2. Obtenemos los vínculos actuales del nivel donde estamos parados para limpiar
             var actuales = await _context.VinculosConceptos
-                .Where(v => v.EntidadId == entidadId && v.TipoEntidad == tipoEntidad)
+                .Where(v => v.ConvenioId == convenioId && v.CargoId == cargoId)
                 .ToListAsync();
 
             _context.VinculosConceptos.RemoveRange(actuales);
 
+            // 3. Insertamos los nuevos, pero con el filtro de "No duplicar"
             foreach (var cId in conceptoIds)
             {
+                // REGLA: Si estoy en un cargo y el concepto ya existe en el convenio, lo salteo.
+                if (cargoId > 0 && idsEnConvenio.Contains(cId))
+                {
+                    continue;
+                }
+
                 await _context.VinculosConceptos.AddAsync(new VinculoConcepto
                 {
                     ConceptoId = cId,
-                    EntidadId = entidadId,
-                    TipoEntidad = tipoEntidad,
+                    ConvenioId = convenioId,
+                    CargoId = cargoId,
                     Activo = true
                 });
             }
@@ -85,43 +142,5 @@ public class VinculoConceptoService : GenericService<VinculoConcepto>, IVinculoC
             })
             .ToListAsync();
     }
-    public async Task<List<VinculoConceptoDto>> ObtenerVinculosMezclados(int convenioId, int? cargoId)
-    {
-        // Buscamos los vínculos e incluimos la entidad 'Concepto'
-        var query = _context.VinculosConceptos
-            .Include(v => v.Concepto) // <--- ESTO ES CLAVE para el nombre
-            .Where(v => (v.TipoEntidad == 1 && v.EntidadId == convenioId));
 
-        if (cargoId.HasValue)
-        {
-            var queryCargo = _context.VinculosConceptos
-                .Include(v => v.Concepto)
-                .Where(v => v.TipoEntidad == 3 && v.EntidadId == cargoId.Value);
-
-            // Unimos ambos resultados
-            var combined = await query.ToListAsync();
-            combined.AddRange(await queryCargo.ToListAsync());
-
-            return combined.Select(v => new VinculoConceptoDto
-            {
-                Id = v.Id,
-                NombreConcepto = v.Concepto?.Descripcion ?? "Sin Nombre",
-                Formula = "", // <--- Ya no la enviamos a esta vista
-                TipoConcepto = v.Concepto?.Tipo.ToString() ?? "",
-                TipoEntidad = v.TipoEntidad,
-                EntidadId = v.EntidadId
-            }).ToList();
-        }
-
-        var listaConvenio = await query.ToListAsync();
-        return listaConvenio.Select(v => new VinculoConceptoDto
-        {
-            Id = v.Id,
-            NombreConcepto = v.Concepto?.Descripcion ?? "Sin Nombre",
-            Formula = v.Concepto?.Formula ?? "",
-            TipoConcepto = v.Concepto?.Tipo.ToString() ?? "",
-            TipoEntidad = v.TipoEntidad,
-            EntidadId = v.EntidadId
-        }).ToList();
-    }
 }

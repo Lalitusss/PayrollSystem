@@ -8,6 +8,7 @@ public class PayrollDbContext : DbContext
 {
     public PayrollDbContext(DbContextOptions<PayrollDbContext> options) : base(options) { }
 
+    public DbSet<AsignacionCargo> AsignacionesCargos => Set<AsignacionCargo>();
     public DbSet<Banco> Bancos => Set<Banco>();
     public DbSet<Cargo> Cargos => Set<Cargo>();
     public DbSet<CategoriaConcepto> CategoriasConceptos => Set<CategoriaConcepto>();

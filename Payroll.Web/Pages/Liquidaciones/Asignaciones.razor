@@ -1,0 +1,420 @@
+﻿@page "/liquidaciones/asignaciones"
+@using Payroll.Engine.Core
+@using Payroll.Engine.Models
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="container-fluid mt-3">
+    <div class="card shadow-sm border-0 mb-3 bg-light border-bottom border-primary border-3">
+        <div class="card-body py-2">
+            <div class="row align-items-end g-2">
+                
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1 text-uppercase">1. Convenio</label>
+                    <select class="form-select form-select-sm border-2 shadow-sm" @onchange="OnConvenioChanged">
+                        <option value="0">-- Seleccione --</option>
+                        @if (listaConvenios != null)
+                        {
+                            @foreach (var conv in listaConvenios.Where(c => c.Categorias != null && c.Categorias.Any(cat => cat.Cargos != null && cat.Cargos.Any())))
+                            {
+                                <option value="@conv.Id" selected="@(ConvenioSeleccionadoId == conv.Id)">@conv.Nombre</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1 text-uppercase">2. Cargo a Asignar</label>
+                    <select class="form-select form-select-sm border-2 shadow-sm @(CargoSeleccionadoId > 0 ? "border-primary bg-primary-subtle" : "")" 
+                            @onchange="OnCargoSelectedInternal">
+                        <option value="0">-- Seleccione el cargo --</option>
+                        @if (CategoriasDelConvenio != null)
+                        {
+                            @foreach (var cat in CategoriasDelConvenio.Where(c => c.Cargos != null && c.Cargos.Any()))
+                            {
+                                <optgroup label="📂 @cat.Nombre.ToUpper()">
+                                    @foreach (var cargo in cat.Cargos!)
+                                    {
+                                        <option value="@cargo.Id" selected="@(CargoSeleccionadoId == cargo.Id)">@cargo.Nombre — ($@cargo.SueldoBasico.ToString("N2"))</option>
+                                    }
+                                </optgroup>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3 position-relative">
+                    <label class="form-label small fw-bold text-muted mb-1 text-uppercase">3. Buscar Persona</label>
+                    <div class="input-group input-group-sm shadow-sm">
+                        <span class="input-group-text bg-white border-2 border-end-0"><i class="bi bi-person-plus-fill text-primary"></i></span>
+                        <input type="text" class="form-control border-2 border-start-0" 
+                               placeholder="Nombre o CUIL..."
+                               disabled="@(CargoSeleccionadoId == 0)"
+                               @bind-value="textoBusquedaGlobal" @bind-value:event="oninput" @onkeyup="HandleKeyUpGlobal" />
+                    </div>
+
+                    @if (ResultadosBusquedaGlobal != null && ResultadosBusquedaGlobal.Any())
+                    {
+                        <div class="list-group shadow-lg position-absolute rounded-3 mt-1 border-0 overflow-hidden" 
+                             style="z-index: 1060; left: 0; min-width: 300px; max-height: 200px; overflow-y: auto;">
+                            @foreach (var p in ResultadosBusquedaGlobal)
+                            {
+                                <button class="list-group-item list-group-item-action py-2 d-flex justify-content-between align-items-center" 
+                                         @onclick="() => AgregarPersonaALista(p)">
+                                    <div class="text-truncate" style="max-width: 250px;">
+                                        <span class="small fw-bold d-block">@p.Apellido, @p.Nombre</span>
+                                        <small class="text-muted">@p.Cuil</small>
+                                    </div>
+                                    <i class="bi bi-plus-circle text-success ms-2"></i>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="col-md-2">
+                    <button class="btn btn-primary btn-sm w-100 fw-bold shadow" 
+                            disabled="@(!listaPersonalAsignar.Any(p => !p.EsExistente && p.CargoId > 0))"
+                            @onclick="EjecutarAsignacionMasiva">
+                        <i class="bi bi-cloud-check-fill me-1"></i> GUARDAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0" style="min-height: 60vh;">
+            @if (CargandoCategorias)
+            {
+                <div class="text-center p-5"><div class="spinner-border text-primary"></div></div>
+            }
+            else if (listaPersonalAsignar.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-dark text-white text-uppercase small">
+                            <tr>
+                                <th class="ps-4 py-3">Personal</th>
+                                <th>CUIL</th>
+                                <th>Cargo</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in listaPersonalAsignar)
+                            {
+                                <tr class="@(p.EsExistente ? "" : "table-info shadow-inner")">
+                                    <td class="ps-4 fw-bold">@p.Apellido, @p.Nombre</td>
+                                    <td class="text-muted">@p.Cuil</td>
+                                    <td><span class="badge bg-secondary px-3">@p.CargoNombre</span></td>
+                                    <td class="text-center">
+                                        @if (p.EsExistente) { <i class="bi bi-lock-fill text-muted" title="Ya guardado"></i> }
+                                        else { <span class="badge bg-primary animate-pulse">NUEVO</span> }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        @if (!p.EsExistente) {
+                                            <button class="btn btn-sm text-danger border-0" @onclick="() => QuitarPersona(p)"><i class="bi bi-trash3"></i></button>
+                                        }
+                                        else {
+                                            <button class="btn btn-sm btn-outline-success border-0" title="Simular Cálculo" @onclick="() => SimularRecibo(p)">
+                                                <i class="bi bi-calculator-fill"></i> Calcular
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-column align-items-center justify-content-center py-5 opacity-75">
+                    <div class="bg-light rounded-circle p-4 mb-3 shadow-sm">
+                        <i class="bi bi-person-vcard text-secondary" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark">¡No hay personal asignado!</h4>
+                    <p class="text-muted text-center" style="max-width: 300px;">
+                        Seleccione un <b>Convenio</b> y un <b>Cargo</b> arriba para comenzar a vincular empleados.
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (mostrarModalSimulacion)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-cpu-fill me-2"></i>Simulación Engine: @empleadoSimulado?.Apellido</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => mostrarModalSimulacion = false"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 bg-light border-bottom">
+                        <div class="row small fw-bold text-uppercase text-muted">
+                            <div class="col-6">Cargo: <span class="text-dark">@empleadoSimulado?.CargoNombre</span></div>
+                            <div class="col-6 text-end">Básico: <span class="text-dark">$@sueldoBasicoSimulacion.ToString("N2")</span></div>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead class="bg-secondary text-white small">
+                                <tr>
+                                    <th class="ps-3">Cod</th>
+                                    <th>Concepto</th>
+                                    <th class="text-end">Haberes</th>
+                                    <th class="text-end pe-3">Deducciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var res in resultadosSimulacion)
+                                {
+                                    <tr>
+                                        <td class="ps-3 text-muted">@res.Codigo</td>
+                                        <td>@res.Descripcion</td>
+                                        <td class="text-end text-success">@(res.Tipo == 2 || res.Tipo == 3 ? res.Importe.ToString("N2") : "-")</td>
+                                        <td class="text-end text-danger pe-3">@(res.Tipo == 4 ? res.Importe.ToString("N2") : "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light justify-content-between">
+                    <div class="fw-bold fs-5 text-primary">NETO: $@resultadosSimulacion.Where(r => r.Tipo < 4).Sum(r => r.Importe) - @resultadosSimulacion.Where(r => r.Tipo == 4).Sum(r => r.Importe)</div>
+                    <button type="button" class="btn btn-secondary px-4" @onclick="() => mostrarModalSimulacion = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .animate-pulse { animation: pulse 2s infinite; }
+    @@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+
+@code {
+    public class EmpleadoAsignacion : PersonalDto {
+        public int? CargoId { get; set; }
+        public string? CargoNombre { get; set; }
+        public bool EsExistente { get; set; }
+    }
+
+    private List<ConvenioDto>? listaConvenios;
+    private List<CategoriaDto>? CategoriasDelConvenio;
+    private List<EmpleadoAsignacion> listaPersonalAsignar = new(); 
+    private List<PersonalDto>? ResultadosBusquedaGlobal;
+    
+    private int? CategoriaAbiertaId;
+    private int CargoSeleccionadoId;
+    private string CargoSeleccionadoNombre = "";
+    private string textoBusquedaGlobal = "";
+    private bool CargandoCategorias = false;
+    private int ConvenioSeleccionadoId = 0;
+
+    // Variables para Simulacion
+    private bool mostrarModalSimulacion = false;
+    private EmpleadoAsignacion? empleadoSimulado;
+    private List<ResultadoItem> resultadosSimulacion = new();
+    private decimal sueldoBasicoSimulacion = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        listaConvenios = await Http.GetFromJsonAsync<List<ConvenioDto>>("api/convenios");
+    }
+
+ private async Task SimularRecibo(EmpleadoAsignacion p)
+{
+    empleadoSimulado = p;
+    
+    var cargo = CategoriasDelConvenio?.SelectMany(c => c.Cargos!).FirstOrDefault(c => c.Id == p.CargoId);
+    sueldoBasicoSimulacion = cargo?.SueldoBasico ?? 0;
+
+    try 
+    {
+        // CAMBIAMOS LA RUTA: Según tu código de controlador es "api/vinculos/convenio/{id}"
+        // Si el controlador tiene [Route("api/vinculos")], usá esta:
+        var conceptos = await Http.GetFromJsonAsync<List<Payroll.Engine.Models.ConceptoDto>>($"api/vinculosconceptos/convenio/{ConvenioSeleccionadoId}/cargo/{p.CargoId}");
+
+        if (conceptos != null && conceptos.Any())
+        {
+            var maestros = new Dictionary<string, decimal> { { "BASICO", sueldoBasicoSimulacion } };
+            var variables = new Dictionary<string, decimal> { { "ANTIGUEDAD", 0 }, { "CANT_HIJOS", 0 } };
+            
+            var contexto = new PayrollContext(maestros, variables);
+            var processor = new PayrollProcessor();
+
+            resultadosSimulacion = processor.Liquidar(conceptos, contexto);
+            mostrarModalSimulacion = true;
+        }
+        else 
+        {
+            await JS.InvokeVoidAsync("Swal.fire", "Info", "No se encontraron conceptos vinculados a este convenio.", "info");
+        }
+    }
+    catch (Exception ex)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", "Error", $"Error al traer conceptos: {ex.Message}", "error");
+    }
+}
+
+    private async Task OnConvenioChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int id) && id > 0)
+        {
+            ConvenioSeleccionadoId = id;
+            CargandoCategorias = true;
+            listaPersonalAsignar.Clear();
+            CargoSeleccionadoId = 0;
+
+            try {
+                CategoriasDelConvenio = await Http.GetFromJsonAsync<List<CategoriaDto>>($"api/categorias/convenio/{id}");
+                var actuales = await Http.GetFromJsonAsync<List<AsignacionCargoDto>>($"api/asignacionescargos/convenio/{id}");
+                if (actuales != null) {
+                    listaPersonalAsignar = actuales.Select(a => new EmpleadoAsignacion {
+                        Id = a.PersonaId, 
+                        Nombre = a.Persona.Nombre, 
+                        Apellido = a.Persona.Apellido, 
+                        Cuil = a.Persona.CUIL,
+                        CargoId = a.CargoId,
+                        CargoNombre = a.Cargo.Nombre,
+                        EsExistente = true 
+                    }).ToList();
+                }
+            } catch { listaPersonalAsignar = new(); }
+            finally { CargandoCategorias = false; }
+        }
+    }
+
+    private void OnCargoSelectedInternal(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int id) && id > 0)
+        {
+            CargoSeleccionadoId = id;
+            var cargoEncontrado = CategoriasDelConvenio?
+                .SelectMany(c => c.Cargos!)
+                .FirstOrDefault(x => x.Id == id);
+                
+            if (cargoEncontrado != null) CargoSeleccionadoNombre = cargoEncontrado.Nombre;
+        }
+        else
+        {
+            CargoSeleccionadoId = 0;
+            CargoSeleccionadoNombre = "";
+        }
+    }
+
+    private async Task HandleKeyUpGlobal(KeyboardEventArgs e)
+    {
+        if (textoBusquedaGlobal.Length > 2)
+            ResultadosBusquedaGlobal = await Http.GetFromJsonAsync<List<PersonalDto>>($"api/personas/buscar/{textoBusquedaGlobal}");
+        else ResultadosBusquedaGlobal = null;
+    }
+
+    private void AgregarPersonaALista(PersonalDto persona)
+    {
+        if (!listaPersonalAsignar.Any(p => p.Id == persona.Id && p.CargoId == CargoSeleccionadoId))
+        {
+            var nuevo = new EmpleadoAsignacion { 
+                Id = persona.Id, 
+                Nombre = persona.Nombre, 
+                Apellido = persona.Apellido, 
+                Cuil = persona.Cuil,
+                EsExistente = false 
+            };
+
+            if (CargoSeleccionadoId > 0) {
+                nuevo.CargoId = CargoSeleccionadoId;
+                nuevo.CargoNombre = CargoSeleccionadoNombre;
+            }
+
+            listaPersonalAsignar.Insert(0, nuevo);
+        }
+        else 
+        {
+            JS.InvokeVoidAsync("Swal.fire", "Atención", "Esta persona ya tiene asignado ese cargo en la lista.", "info");
+        }
+
+        ResultadosBusquedaGlobal = null;
+        textoBusquedaGlobal = "";
+    }
+
+    private void QuitarPersona(EmpleadoAsignacion item) 
+    {
+        listaPersonalAsignar.Remove(item);
+    }
+    
+    private async Task EjecutarAsignacionMasiva()
+    {
+        var nuevosItems = listaPersonalAsignar
+            .Where(p => !p.EsExistente && p.CargoId > 0)
+            .Select(p => new { PersonaId = p.Id, CargoId = p.CargoId })
+            .ToList();
+
+        if (!nuevosItems.Any())
+        {
+            await JS.InvokeVoidAsync("Swal.fire", "Atención", "No hay nuevas asignaciones para guardar.", "warning");
+            return;
+        }
+
+        var command = new { 
+            ConvenioId = ConvenioSeleccionadoId,
+            Items = nuevosItems
+        };
+    
+        try 
+        {
+            var res = await Http.PostAsJsonAsync("api/asignacionescargos/masiva", command);
+
+            if (res.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("Swal.fire", new {
+                    title = "¡Guardado!",
+                    text = "Asignaciones procesadas con éxito.",
+                    icon = "success",
+                    timer = 2000,
+                    showConfirmButton = false
+                });
+
+                await RecargarPersonal(); 
+            }
+            else
+            {
+                var errorBody = await res.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("Swal.fire", "Error", $"No se pudo procesar: {errorBody}", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("Swal.fire", "Error Fatal", $"Error de red: {ex.Message}", "error");
+        }
+    }
+
+    private async Task RecargarPersonal()
+    {
+        CargandoCategorias = true;
+        try 
+        {
+            var actuales = await Http.GetFromJsonAsync<List<AsignacionCargoDto>>($"api/asignacionescargos/convenio/{ConvenioSeleccionadoId}");
+            if (actuales != null) {
+                listaPersonalAsignar = actuales.Select(a => new EmpleadoAsignacion {
+                    Id = a.PersonaId, 
+                    Nombre = a.Persona.Nombre, 
+                    Apellido = a.Persona.Apellido, 
+                    Cuil = a.Persona.CUIL,
+                    CargoId = a.CargoId,
+                    CargoNombre = a.Cargo.Nombre,
+                    EsExistente = true 
+                }).ToList();
+            }
+        }
+        finally { CargandoCategorias = false; }
+    }
+}

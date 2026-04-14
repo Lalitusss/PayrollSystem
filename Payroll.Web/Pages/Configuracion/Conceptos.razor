@@ -43,7 +43,7 @@
                     }
                     else
                     {
-                        @foreach (var c in Lista)
+                        @foreach (var c in Lista.OrderBy(x => x.Codigo))
                         {
                             <tr>
                                 <td class="ps-4 fw-mono small">@c.Codigo</td>
