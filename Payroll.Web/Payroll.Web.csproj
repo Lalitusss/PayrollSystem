@@ -14,9 +14,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Payroll.Core\Payroll.Core.csproj" />
-    <ProjectReference Include="..\Payroll.Data\Payroll.Data.csproj" />
     <ProjectReference Include="..\Payroll.Engine\Payroll.Engine.csproj" />
-    <ProjectReference Include="..\Payroll.Services\Payroll.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\css\fonts\" />
   </ItemGroup>
 
 </Project>

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Payroll.Core.Entities;
 using Payroll.Data;
 using Payroll.Domain.Entities;
-using Payroll.Services.DTOs;
+using Payroll.Core.DTOs;
 using Payroll.Services.Interfaces;
 
 namespace Payroll.Services.Implementations;
@@ -67,13 +67,18 @@ public class VinculoConceptoService : GenericService<VinculoConcepto>, IVinculoC
             .ToListAsync();
     }
 
-    public async Task ActualizarVinculos(int convenioId, int cargoId, List<int> conceptoIds)
+    public async Task ActualizarVinculos(int convenioId, int? cargoId, List<int> conceptoIds)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // 1. Buscamos qué conceptos ya están vinculados al CONVENIO (CargoId 0 o null)
-            // Solo si estamos intentando actualizar un CARGO específico.
+            // 1. Buscamos qué conceptos YA están en este nivel para no duplicar
+            var yaExistentes = await _context.VinculosConceptos
+                .Where(v => v.ConvenioId == convenioId && v.CargoId == cargoId)
+                .Select(v => v.ConceptoId)
+                .ToListAsync();
+
+            // 2. Opcional: También buscamos los del convenio si estamos en un cargo (tu regla actual)
             var idsEnConvenio = new List<int>();
             if (cargoId > 0)
             {
@@ -83,18 +88,14 @@ public class VinculoConceptoService : GenericService<VinculoConcepto>, IVinculoC
                     .ToListAsync();
             }
 
-            // 2. Obtenemos los vínculos actuales del nivel donde estamos parados para limpiar
-            var actuales = await _context.VinculosConceptos
-                .Where(v => v.ConvenioId == convenioId && v.CargoId == cargoId)
-                .ToListAsync();
+            // 3. COMENTÁ O BORRÁ EL REMOVERANGE
+            // _context.VinculosConceptos.RemoveRange(actuales); <--- ESTO ES LO QUE TE BORRA TODO
 
-            _context.VinculosConceptos.RemoveRange(actuales);
-
-            // 3. Insertamos los nuevos, pero con el filtro de "No duplicar"
+            // 4. Insertamos solo los nuevos que no estén ni en el nivel actual ni en el convenio
             foreach (var cId in conceptoIds)
             {
-                // REGLA: Si estoy en un cargo y el concepto ya existe en el convenio, lo salteo.
-                if (cargoId > 0 && idsEnConvenio.Contains(cId))
+                // Si ya existe en este nivel o ya viene por convenio, no lo agregamos
+                if (yaExistentes.Contains(cId) || (cargoId > 0 && idsEnConvenio.Contains(cId)))
                 {
                     continue;
                 }
@@ -103,7 +104,7 @@ public class VinculoConceptoService : GenericService<VinculoConcepto>, IVinculoC
                 {
                     ConceptoId = cId,
                     ConvenioId = convenioId,
-                    CargoId = cargoId,
+                    CargoId = cargoId == 0 ? null : cargoId,
                     Activo = true
                 });
             }

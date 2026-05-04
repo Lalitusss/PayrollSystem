@@ -15,7 +15,7 @@
                         <option value="0">-- Seleccione --</option>
                         @if (listaConvenios != null)
                         {
-                            @foreach (var conv in listaConvenios.Where(c => c.Categorias != null && c.Categorias.Any(cat => cat.Cargos != null && cat.Cargos.Any())))
+                            @foreach (var conv in listaConvenios)
                             {
                                 <option value="@conv.Id" selected="@(ConvenioSeleccionadoId == conv.Id)">@conv.Nombre</option>
                             }
@@ -44,7 +44,7 @@
                 </div>
 
                 <div class="col-md-3 position-relative">
-                    <label class="form-label small fw-bold text-muted mb-1 text-uppercase">3. Buscar Persona</label>
+                    <label class="form-label small fw-bold text-muted mb-1 text-uppercase">3. Buscar Empleado</label>
                     <div class="input-group input-group-sm shadow-sm">
                         <span class="input-group-text bg-white border-2 border-end-0"><i class="bi bi-person-plus-fill text-primary"></i></span>
                         <input type="text" class="form-control border-2 border-start-0" 
@@ -279,10 +279,10 @@
                 var actuales = await Http.GetFromJsonAsync<List<AsignacionCargoDto>>($"api/asignacionescargos/convenio/{id}");
                 if (actuales != null) {
                     listaPersonalAsignar = actuales.Select(a => new EmpleadoAsignacion {
-                        Id = a.PersonaId, 
-                        Nombre = a.Persona.Nombre, 
-                        Apellido = a.Persona.Apellido, 
-                        Cuil = a.Persona.CUIL,
+                        Id = a.EmpleadoId, 
+                        Nombre = a.Empleado.Nombre, 
+                        Apellido = a.Empleado.Apellido, 
+                        Cuil = a.Empleado.CUIL,
                         CargoId = a.CargoId,
                         CargoNombre = a.Cargo.Nombre,
                         EsExistente = true 
@@ -405,10 +405,10 @@
             var actuales = await Http.GetFromJsonAsync<List<AsignacionCargoDto>>($"api/asignacionescargos/convenio/{ConvenioSeleccionadoId}");
             if (actuales != null) {
                 listaPersonalAsignar = actuales.Select(a => new EmpleadoAsignacion {
-                    Id = a.PersonaId, 
-                    Nombre = a.Persona.Nombre, 
-                    Apellido = a.Persona.Apellido, 
-                    Cuil = a.Persona.CUIL,
+                    Id = a.EmpleadoId, 
+                    Nombre = a.Empleado.Nombre, 
+                    Apellido = a.Empleado.Apellido, 
+                    Cuil = a.Empleado.CUIL,
                     CargoId = a.CargoId,
                     CargoNombre = a.Cargo.Nombre,
                     EsExistente = true 

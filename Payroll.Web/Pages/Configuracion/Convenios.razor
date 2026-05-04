@@ -1,19 +1,21 @@
 ﻿@page "/configuracion/convenios"
-@using Payroll.Services.DTOs
+@using Payroll.Core.DTOs
+@using System.Threading
 @inherits BaseListado<ConvenioDto>
+@implements IDisposable
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
 <div class="container-fluid h-100 mt-2">
     <div class="row h-100 g-3">
-        
+
         @* COLUMNA 1: CONVENIOS *@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
                     <span class="fw-bold text-uppercase small">Convenios</span>
-                    <button class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" 
+                    <button class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center"
                             style="width: 28px; height: 28px; padding: 0;" @onclick="IrANuevo">
                         <i class="bi bi-plus-lg" style="font-size: 0.8rem;"></i>
                     </button>
@@ -23,7 +25,7 @@
                     {
                         @foreach (var c in Lista)
                         {
-                            <button @onclick="() => SeleccionarConvenio(c)" 
+                            <button @onclick="() => SeleccionarConvenio(c)"
                                     class="list-group-item list-group-item-action border-start-0 border-end-0 py-2 @(ConvenioSeleccionado?.Id == c.Id ? "active bg-primary text-white" : "")">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="fw-medium">@c.Nombre</span>
@@ -43,7 +45,7 @@
                     <span class="fw-bold text-uppercase small">Categorías y Cargos</span>
                     @if (ConvenioSeleccionado != null)
                     {
-                        <button class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" 
+                        <button class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center"
                                 style="width: 28px; height: 28px; padding: 0;" @onclick="NuevaCategoria">
                             <i class="bi bi-plus-lg" style="font-size: 0.8rem;"></i>
                         </button>
@@ -61,6 +63,16 @@
                     {
                         <div class="text-center my-auto"><div class="spinner-border text-secondary" role="status"></div></div>
                     }
+                    else if (!CategoriasDelConvenio.Any())
+                    {
+                        <div class="text-center my-auto p-4 animate-fade-in">
+                            <i class="bi bi-plus-circle text-secondary mb-3" style="font-size: 2.5rem; opacity: 0.4;"></i>
+                            <p class="text-muted mb-3">No hay categorías configuradas para este convenio.</p>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="NuevaCategoria">
+                                <i class="bi bi-plus-lg me-1"></i> Crear primera categoría
+                            </button>
+                        </div>
+                    }
                     else
                     {
                         @foreach (var cat in CategoriasDelConvenio)
@@ -68,12 +80,12 @@
                             var estaAbierto = CategoriaAbiertaId == cat.Id;
                             var cantidadCargos = cat.Cargos?.Count ?? 0;
                             <div class="categoria-group border-bottom">
-                                <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center pointer" 
+                                <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center pointer"
                                      @onclick="() => ToggleCategoria(cat.Id)">
                                     <div class="d-flex align-items-center">
                                         <i class="bi @(estaAbierto ? "bi-chevron-down" : "bi-chevron-right") me-2 text-muted" style="font-size: 0.7rem;"></i>
                                         <h6 class="text-dark small fw-bold mb-0 text-uppercase">
-                                            @cat.Nombre 
+                                            @cat.Nombre
                                             <span class="badge rounded-pill bg-secondary ms-2" style="font-size: 0.6rem;">@cantidadCargos</span>
                                         </h6>
                                     </div>
@@ -86,10 +98,10 @@
                                     <div class="list-group list-group-flush animate-fade-in">
                                         @foreach (var cargo in cat.Cargos ?? Enumerable.Empty<CargoDto>())
                                         {
-                                            <div @onclick="() => SeleccionarCargo(cargo)" 
+                                            <div @onclick="() => SeleccionarCargo(cargo)"
                                                  class="list-group-item list-group-item-action py-2 ps-4 border-0 d-flex justify-content-between align-items-center @(CargoSeleccionado?.Id == cargo.Id ? "bg-primary-subtle fw-bold border-start border-primary border-4" : "small text-muted")"
                                                  style="cursor:pointer">
-                                                
+
                                                 <div class="flex-grow-1">
                                                     <span class="d-block">@cargo.Nombre</span>
                                                     <span class="text-primary" style="font-size: 0.7rem;">$ @cargo.SueldoBasico.ToString("N2")</span>
@@ -121,7 +133,7 @@
                     <span class="fw-bold text-dark text-uppercase small">Conceptos Vinculados</span>
                     @if (ConvenioSeleccionado != null)
                     {
-                        <button class="btn btn-dark rounded-circle d-flex align-items-center justify-content-center" 
+                        <button class="btn btn-dark rounded-circle d-flex align-items-center justify-content-center"
                                 style="width: 28px; height: 28px; padding: 0;" @onclick="AbrirModalVinculacion">
                             <i class="bi bi-plus-lg" style="font-size: 0.8rem;"></i>
                         </button>
@@ -143,7 +155,7 @@
                         <div class="bg-success text-white p-2 text-center small fw-bold text-uppercase">
                             @(CargoSeleccionado != null ? $"Cargo: {CargoSeleccionado.Nombre}" : $"General del Convenio: {ConvenioSeleccionado.Nombre}")
                         </div>
-                        
+
                         <div class="p-0 scroll-column flex-grow-1">
                             @if (CargandoConceptos)
                             {
@@ -187,9 +199,6 @@
                                                     }
                                                 </td>
                                                 <td class="text-end pe-3">
-                                                    @* Si no hay cargo seleccionado, solo puedo borrar lo que es del convenio (CargoId 0 o null) *@
-                                                    @* Si hay un cargo seleccionado, solo puedo borrar lo que es propio de ese cargo *@
-    
                                                     @if (CargoSeleccionado == null && (v.CargoId == 0 || v.CargoId == null))
                                                     {
                                                         <button class="btn btn-sm text-danger" @onclick="() => EliminarVinculo(v)">
@@ -204,7 +213,6 @@
                                                     }
                                                     else
                                                     {
-                                                        @* Mostramos el candado para conceptos heredados *@
                                                         <i class="bi bi-lock-fill text-muted small" title="Este concepto viene del convenio y no puede borrarse desde el cargo"></i>
                                                     }
                                                 </td>
@@ -271,21 +279,42 @@
 </ModalGenerico>
 
 <style>
-    .scroll-column { max-height: 80vh; overflow-y: auto; }
-    .pointer { cursor: pointer; }
-    .animate-fade-in { animation: fadeIn 0.2s ease-in; }
-    @@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    .scroll-column {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .pointer {
+        cursor: pointer;
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.2s ease-in;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 
 @code {
     private ConvenioDto? ConvenioSeleccionado;
     private List<CategoriaDto> CategoriasDelConvenio = new();
-    private CargoDto? CargoSeleccionado; 
+    private CargoDto? CargoSeleccionado;
     private bool CargandoCategorias = false;
     private bool CargandoConceptos = false;
-    private int? CategoriaAbiertaId; 
+    private int? CategoriaAbiertaId;
+    private CancellationTokenSource? cts;
 
-    private List<ConceptoDto> ConceptosVinculados = new(); 
+    private List<ConceptoDto> ConceptosVinculados = new();
     private List<ConceptoSeleccionableDto> MaestroConceptos = new();
 
     private bool mostrarModalConvenio = false;
@@ -293,165 +322,255 @@
     private bool mostrarModalCargo = false;
     private bool mostrarModalVinculacion = false;
     private bool procesando = false;
-    
+
     private ConvenioDto nuevoConvenio = new();
     private CategoriaDto nuevaCategoria = new();
     private CargoDto cargoParaEditar = new();
 
     protected override string PageUrl => "/configuracion/convenios";
 
+    // 1. ANULAMOS el disparo automático de la base
+    protected override Task OnParametersSetAsync()
+    {
+        // Al no llamar a base.OnParametersSetAsync(), evitamos el disparo de Cargar()
+        return Task.CompletedTask;
+    }
+
+    // 2. Usamos SOLO nuestro método de carga
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarListaOptimizada();
+    }
+    private async Task CargarListaOptimizada()
+    {
+        try
+        {
+            Lista = await Http.GetFromJsonAsync<List<ConvenioDto>>("api/convenios/optimizado");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar convenios: {ex.Message}");
+        }
+    }
+
     private void ToggleCategoria(int id) => CategoriaAbiertaId = CategoriaAbiertaId == id ? null : id;
 
     private async Task SeleccionarConvenio(ConvenioDto c)
     {
+        // Cancelación segura de peticiones anteriores
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+
         ConvenioSeleccionado = c;
-        CargoSeleccionado = null; 
-        CategoriasDelConvenio = new();
-        CategoriaAbiertaId = null;
+        CargoSeleccionado = null;
         CargandoCategorias = true;
-        await CargarConceptosColumna3();
-        try {
-            CategoriasDelConvenio = await Http.GetFromJsonAsync<List<CategoriaDto>>($"api/categorias/convenio/{c.Id}") ?? new();
-        } finally { CargandoCategorias = false; }
+        CargandoConceptos = true;
+        CategoriasDelConvenio.Clear();
+        ConceptosVinculados.Clear();
+
+        try
+        {
+            // Tarea 1: Categorías
+            var tCategorias = Http.GetFromJsonAsync<List<CategoriaDto>>($"api/categorias/convenio/{c.Id}", token);
+            // Tarea 2: Conceptos (Columna 3)
+            var tConceptos = CargarConceptosColumna3(token);
+
+            await Task.WhenAll(tCategorias, tConceptos);
+
+            CategoriasDelConvenio = await tCategorias ?? new();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en selección: {ex.Message}");
+        }
+        finally
+        {
+            if (!token.IsCancellationRequested)
+            {
+                CargandoCategorias = false;
+                CargandoConceptos = false;
+                StateHasChanged();
+            }
+        }
     }
 
-    private async Task SeleccionarCargo(CargoDto cargo) 
+    private async Task SeleccionarCargo(CargoDto cargo)
     {
+        if (CargoSeleccionado?.Id == cargo.Id) return;
+
         CargoSeleccionado = cargo;
         await CargarConceptosColumna3();
     }
 
-    private async Task CargarConceptosColumna3()
+    private async Task CargarConceptosColumna3(CancellationToken token = default)
     {
         if (ConvenioSeleccionado == null) return;
         CargandoConceptos = true;
-        ConceptosVinculados = new(); 
-    
-        try 
+
+        try
         {
-            int idCargo = CargoSeleccionado?.Id ?? 0;
-            string url = $"api/VinculosConceptos/convenio/{ConvenioSeleccionado.Id}/cargo/{idCargo}";
-            var resultado = await Http.GetFromJsonAsync<List<ConceptoDto>>(url);
-            ConceptosVinculados = resultado ?? new List<ConceptoDto>();
-        } 
-        catch (Exception ex) 
-        {
-            ConceptosVinculados = new List<ConceptoDto>();
-            Console.WriteLine($"Error: {ex.Message}");
+            // Cargar conceptos base del convenio
+            string urlConvenio = $"api/VinculosConceptos/convenio/{ConvenioSeleccionado.Id}/cargo/0";
+            var conceptosConvenio = await Http.GetFromJsonAsync<List<ConceptoDto>>(urlConvenio, token) ?? new();
+
+            if (CargoSeleccionado != null)
+            {
+                // Cargar conceptos específicos del cargo
+                string urlCargo = $"api/VinculosConceptos/convenio/{ConvenioSeleccionado.Id}/cargo/{CargoSeleccionado.Id}";
+                var conceptosCargo = await Http.GetFromJsonAsync<List<ConceptoDto>>(urlCargo, token) ?? new();
+
+                // Unificar evitando duplicados por Id (priorizando visualmente el origen)
+                ConceptosVinculados = conceptosConvenio
+                    .Concat(conceptosCargo)
+                    .DistinctBy(x => x.Id)
+                    .ToList();
+            }
+            else
+            {
+                ConceptosVinculados = conceptosConvenio;
+            }
         }
-        finally { CargandoConceptos = false; }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando conceptos: {ex.Message}");
+        }
+        finally
+        {
+            if (!token.IsCancellationRequested) CargandoConceptos = false;
+        }
     }
 
     private async Task AbrirModalVinculacion()
     {
         if (ConvenioSeleccionado == null) return;
         procesando = true;
-        try {
-            // Traemos todos los conceptos posibles
+        try
+        {
             var maestroOriginal = await Http.GetFromJsonAsync<List<ConceptoSeleccionableDto>>("api/VinculosConceptos/maestro") ?? new();
-        
-            // FILTRO LÓGICO:
-            // 1. Obtenemos los IDs de conceptos que YA están en la lista actual (heredados o propios)
             var idsYaVinculados = ConceptosVinculados.Select(v => v.Id).ToList();
 
-            // 2. Filtramos el maestro para mostrar solo lo que NO está en la lista
-            // Esto evita que asignes al cargo algo que ya viene por convenio
+            // Solo mostrar conceptos que no están vinculados
             MaestroConceptos = maestroOriginal
                 .Where(m => !idsYaVinculados.Contains(m.Id))
                 .ToList();
 
             mostrarModalVinculacion = true;
-        } finally { procesando = false; }
+        }
+        finally { procesando = false; }
     }
 
     private async Task GuardarVinculos()
     {
-        var seleccionados = MaestroConceptos.Where(x => x.Seleccionado).Select(x => x.Id).ToList();
-        if (ConvenioSeleccionado == null) return;
-        
+        var seleccionados = MaestroConceptos.Where(x => x.Seleccionado).ToList();
+        if (ConvenioSeleccionado == null || !seleccionados.Any()) return;
+
         procesando = true;
-        try {
-            var command = new {
-                ConceptoIds = seleccionados,
+        try
+        {
+            var command = new
+            {
+                ConceptoIds = seleccionados.Select(x => x.Id).ToList(),
                 ConvenioId = ConvenioSeleccionado.Id,
-                CargoId = CargoSeleccionado?.Id ?? 0 
+                CargoId = CargoSeleccionado?.Id ?? 0
             };
 
             var response = await Http.PostAsJsonAsync("api/VinculosConceptos/vincular", command);
-            if (response.IsSuccessStatusCode) {
+            if (response.IsSuccessStatusCode)
+            {
                 mostrarModalVinculacion = false;
                 await CargarConceptosColumna3();
             }
-        } finally { procesando = false; }
+        }
+        finally { procesando = false; }
     }
 
     private void IrANuevo() { nuevoConvenio = new(); mostrarModalConvenio = true; }
-    
-    private void NuevaCategoria() {
-        if (ConvenioSeleccionado != null) {
+
+    private void NuevaCategoria()
+    {
+        if (ConvenioSeleccionado != null)
+        {
             nuevaCategoria = new() { ConvenioId = ConvenioSeleccionado.Id };
             mostrarModalCategoria = true;
         }
     }
 
-    private void AbrirNuevoCargo(CategoriaDto cat) {
+    private void AbrirNuevoCargo(CategoriaDto cat)
+    {
         cargoParaEditar = new CargoDto { CategoriaId = cat.Id, SueldoBasico = 0 };
         mostrarModalCargo = true;
     }
 
-    private void AbrirEditarCargo(CargoDto cargo) {
-        cargoParaEditar = new CargoDto { 
-            Id = cargo.Id, 
-            Nombre = cargo.Nombre, 
-            SueldoBasico = cargo.SueldoBasico, 
-            CategoriaId = cargo.CategoriaId 
+    private void AbrirEditarCargo(CargoDto cargo)
+    {
+        cargoParaEditar = new CargoDto
+        {
+            Id = cargo.Id,
+            Nombre = cargo.Nombre,
+            SueldoBasico = cargo.SueldoBasico,
+            CategoriaId = cargo.CategoriaId
         };
         mostrarModalCargo = true;
     }
 
-    private async Task GuardarCargo() {
+    private async Task GuardarCargo()
+    {
         if (string.IsNullOrWhiteSpace(cargoParaEditar.Nombre)) return;
         procesando = true;
-        try {
-            HttpResponseMessage response = cargoParaEditar.Id == 0 
+        try
+        {
+            HttpResponseMessage response = cargoParaEditar.Id == 0
                 ? await Http.PostAsJsonAsync("api/cargos", cargoParaEditar)
                 : await Http.PutAsJsonAsync($"api/cargos/{cargoParaEditar.Id}", cargoParaEditar);
 
-            if (response.IsSuccessStatusCode) {
+            if (response.IsSuccessStatusCode)
+            {
                 mostrarModalCargo = false;
                 if (ConvenioSeleccionado != null) await SeleccionarConvenio(ConvenioSeleccionado);
             }
-        } finally { procesando = false; }
+        }
+        finally { procesando = false; }
     }
 
     private async Task EliminarCargo(CargoDto cargo)
     {
-        // Reutilizamos la base para preguntar
-        if (await Confirmar("¿Eliminar Cargo?", $"Vas a borrar '{cargo.Nombre}'")) 
+        if (await Confirmar("¿Eliminar Cargo?", $"Vas a borrar '{cargo.Nombre}'"))
         {
             var response = await Http.DeleteAsync($"api/cargos/{cargo.Id}");
             if (response.IsSuccessStatusCode)
             {
-                await NotificarSuccess("Cargo eliminado"); // Reutilizamos la base para el brindis
+                await NotificarSuccess("Cargo eliminado");
                 if (ConvenioSeleccionado != null) await SeleccionarConvenio(ConvenioSeleccionado);
             }
         }
     }
 
-    private async Task GuardarConvenio() {
+    private async Task GuardarConvenio()
+    {
         if (string.IsNullOrEmpty(nuevoConvenio.Nombre)) return;
         procesando = true;
-        if ((await Http.PostAsJsonAsync("api/convenios", nuevoConvenio)).IsSuccessStatusCode) {
+        var res = await Http.PostAsJsonAsync("api/convenios", nuevoConvenio);
+        if (res.IsSuccessStatusCode)
+        {
             mostrarModalConvenio = false;
-            await OnInitializedAsync();
+            await CargarListaOptimizada();
+            await NotificarSuccess("Convenio creado");
         }
         procesando = false;
     }
 
-    private async Task GuardarCategoria() {
+    private async Task GuardarCategoria()
+    {
         if (string.IsNullOrEmpty(nuevaCategoria.Nombre) || ConvenioSeleccionado == null) return;
+        nuevaCategoria.ConvenioId = ConvenioSeleccionado.Id;
         procesando = true;
-        if ((await Http.PostAsJsonAsync("api/categorias", nuevaCategoria)).IsSuccessStatusCode) {
+        var res = await Http.PostAsJsonAsync("api/categorias", nuevaCategoria);
+        if (res.IsSuccessStatusCode)
+        {
             mostrarModalCategoria = false;
             await SeleccionarConvenio(ConvenioSeleccionado);
         }
@@ -460,7 +579,7 @@
 
     private async Task EliminarVinculo(ConceptoDto v)
     {
-        if (await Confirmar("¿Desvincular?", $"¿Quitar '{v.Descripcion}'?")) 
+        if (await Confirmar("¿Desvincular?", $"¿Quitar '{v.Descripcion}'?"))
         {
             var response = await Http.DeleteAsync($"api/VinculosConceptos/{v.VinculoConceptoId}");
             if (response.IsSuccessStatusCode)
@@ -469,5 +588,11 @@
                 await CargarConceptosColumna3();
             }
         }
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
     }
 }

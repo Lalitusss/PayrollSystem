@@ -2,7 +2,7 @@
 
 namespace Payroll.Core.Entities;
 
-public class Persona : IEntity
+public class Empleado : IEntity
 {
     public int Id { get; set; }
     public string Apellido { get; set; } = string.Empty;

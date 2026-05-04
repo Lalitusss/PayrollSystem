@@ -1,7 +1,7 @@
 ﻿using Payroll.Core.Enums;
 using System.ComponentModel.DataAnnotations;
 
-namespace Payroll.Services.DTOs;
+namespace Payroll.Core.DTOs;
 
 public class ConceptoDto
 {

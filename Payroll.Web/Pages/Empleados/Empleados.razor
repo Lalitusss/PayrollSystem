@@ -1,11 +1,11 @@
-﻿@page "/personas"
-@inherits BaseListado<PersonaDto>
+﻿@page "/empleados"
+@inherits BaseListado<EmpleadoDto>
 @layout MainLayout
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark">Gestión de Personal</h2>
+    <h2 class="fw-bold text-dark">Gestión de Empleados</h2>
     <button class="btn btn-primary shadow-sm" @onclick="IrANuevo">
-        <i class="bi bi-plus-circle me-2"></i>Nueva Persona
+        <i class="bi bi-plus-circle me-2"></i>Nuevo Empleado
     </button>
 </div>
 
@@ -90,5 +90,5 @@
 </div>
 
 @code {
-    protected override string PageUrl => "/personas";
+    protected override string PageUrl => "/empleados";
 }

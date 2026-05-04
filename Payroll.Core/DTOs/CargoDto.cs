@@ -1,7 +1,6 @@
 ﻿using Payroll.Core.Entities;
 
-namespace Payroll.Services.DTOs;
-
+namespace Payroll.Core.DTOs;
 public class CargoDto
 {
     public int Id { get; set; }

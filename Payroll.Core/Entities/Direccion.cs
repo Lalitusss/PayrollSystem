@@ -5,7 +5,7 @@ namespace Payroll.Core.Entities;
 public class Direccion : IEntity
 {
     public int Id { get; set; }
-    public int PersonaId { get; set; } // FK
+    public int EmpleadoId { get; set; } // FK
     public string? Calle { get; set; }
     public string? Altura { get; set; }
     public string? Piso { get; set; }

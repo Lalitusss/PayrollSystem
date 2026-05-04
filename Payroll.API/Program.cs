@@ -21,11 +21,18 @@ builder.Services.AddOpenApi();
 // 2. CONEXIÓN A BASE DE DATOS
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<PayrollDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        // Activa el Split Query globalmente
+        sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+
+        // Opcional: Configura reintentos automáticos si la DB está en Azure
+        sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+    }));
 
 // 3. REGISTRAR SERVICIOS DE APLICACIÓN
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
-builder.Services.AddScoped<IPersonaService, PersonaService>();
+builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
 builder.Services.AddScoped<IConceptoService, ConceptoService>();
 builder.Services.AddScoped<IBancoService, BancoService>();
 builder.Services.AddScoped<ICargoService, CargoService>();

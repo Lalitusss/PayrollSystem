@@ -2,33 +2,33 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Core.Entities;
-using Payroll.Services.DTOs;
+using Payroll.Core.DTOs;
 using Payroll.Services.Interfaces;
 
 namespace Payroll.API.Controllers;
 
-public class PersonasController
-    : GenericController<Persona, PersonaDto>
+public class EmpleadosController
+    : GenericController<Empleado, EmpleadoDto>
 {
-    public PersonasController(IPersonaService service)
+    public EmpleadosController(IEmpleadoService service)
         : base(service)
     {
     }
 
     [HttpGet("{id}")]
-    public override async Task<ActionResult<Persona>> Get(int id)
+    public override async Task<ActionResult<Empleado>> Get(int id)
     {
         // 1. Usamos el IQueryable del servicio para incluir las tablas relacionadas
-        var persona = await _service.GetQueryable()
+        var Empleado = await _service.GetQueryable()
             .Include(p => p.Direccion)
             .Include(p => p.DatoBancario)
             .Include(p => p.Familiar)
             .FirstOrDefaultAsync(p => p.Id == id);
 
-        if (persona == null) return NotFound();
+        if (Empleado == null) return NotFound();
 
         // 2. Mapeamos a nuestro DTO de edición que tiene los IDs y la lista
-        var dto = persona.Adapt<PersonaEdicionDto>();
+        var dto = Empleado.Adapt<EmpleadoEdicionDto>();
 
         return Ok(dto);
     }

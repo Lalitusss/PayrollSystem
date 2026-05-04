@@ -1,5 +1,4 @@
-﻿namespace Payroll.Services.DTOs;
-
+﻿namespace Payroll.Core.DTOs;
 public class PersonalDto
 {
     public int Id { get; set; }

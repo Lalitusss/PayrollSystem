@@ -1,6 +1,5 @@
-﻿namespace Payroll.Services.DTOs;
-
-public class PersonaEdicionDto
+﻿namespace Payroll.Core.DTOs;
+public class EmpleadoEdicionDto
 {
     // Datos General
     public int Id { get; set; }

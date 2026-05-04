@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Core.Entities;
-using Payroll.Services.DTOs;
+using Payroll.Core.DTOs;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Payroll.API.Controllers;
@@ -37,7 +37,7 @@ public class AsignacionesCargosController
     {
         // 1. Obtenemos la data incluyendo las relaciones para evitar NullReference en Blazor
         var asignaciones = await _asignacionService.GetQueryable()
-            .Include(a => a.Persona)
+            .Include(a => a.Empleado)
             .Include(a => a.Cargo)
             .Where(a => a.ConvenioId == id && a.Activo)
             .ToListAsync();
@@ -47,11 +47,11 @@ public class AsignacionesCargosController
         var dtos = asignaciones.Select(a => new AsignacionCargoDto
         {
             Id = a.Id,
-            PersonaId = a.PersonaId,
+            EmpleadoId = a.EmpleadoId,
             CargoId = a.CargoId,
             ConvenioId = a.ConvenioId,
             // Es vital que el DTO tenga estas propiedades para el diseño limpio
-            Persona = a.Persona,
+            Empleado = a.Empleado,
             Cargo = a.Cargo
         }).ToList();
 

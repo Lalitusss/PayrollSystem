@@ -2,7 +2,7 @@
 using Payroll.API.Controllers;
 using Payroll.Core.Entities; // Asegúrate que la entidad esté en el namespace correcto
 using Payroll.Domain.Entities;
-using Payroll.Services.DTOs;
+using Payroll.Core.DTOs;
 using Payroll.Services.Interfaces;
 
 namespace Payroll.Web.Api.Controllers;
@@ -61,6 +61,6 @@ public class VinculosConceptosController : GenericController<VinculoConcepto, Vi
 public class VinculacionRequest
 {
     public int ConvenioId { get; set; }
-    public int CargoId { get; set; }
+    public int? CargoId { get; set; }
     public List<int> ConceptoIds { get; set; } = new();
 }

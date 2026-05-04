@@ -1,9 +1,9 @@
-﻿namespace Payroll.Services.DTOs;
+﻿namespace Payroll.Core.DTOs;
 
 public class FamiliarDto
 {
     public int Id { get; set; }
-    public int PersonaId { get; set; }
+    public int EmpleadoId { get; set; }
 
     public string Apellido { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;

@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Payroll.Core.DTOs;
 using Payroll.Core.Entities;
 using Payroll.Data;
-using Payroll.Services.DTOs;
-using Payroll.Services.Interfaces;
 
 namespace Payroll.Services.Implementations
 {
@@ -24,7 +23,7 @@ namespace Payroll.Services.Implementations
                 {
                     // CAMBIO CLAVE: Agregamos el CargoId a la búsqueda para permitir múltiples cargos
                     var existente = await _context.AsignacionesCargos
-                        .FirstOrDefaultAsync(a => a.PersonaId == item.PersonaId
+                        .FirstOrDefaultAsync(a => a.EmpleadoId == item.EmpleadoId
                                                && a.ConvenioId == dto.ConvenioId
                                                && a.CargoId == item.CargoId); // <-- Ahora busca la combinación exacta
 
@@ -40,7 +39,7 @@ namespace Payroll.Services.Implementations
                         // Si no tiene ESTE cargo específico, creamos uno nuevo (aunque ya tenga otros)
                         var nueva = new AsignacionCargo
                         {
-                            PersonaId = item.PersonaId,
+                            EmpleadoId = item.EmpleadoId,
                             ConvenioId = dto.ConvenioId,
                             CargoId = item.CargoId,
                             FechaAsignacion = DateTime.Now,

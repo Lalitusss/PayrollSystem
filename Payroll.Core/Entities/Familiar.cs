@@ -5,7 +5,7 @@ namespace Payroll.Core.Entities;
 public class Familiar : IEntity
 {
     public int Id { get; set; }
-    public int PersonaId { get; set; } // Foreign Key
+    public int EmpleadoId { get; set; } // Foreign Key
 
     public string Apellido { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;

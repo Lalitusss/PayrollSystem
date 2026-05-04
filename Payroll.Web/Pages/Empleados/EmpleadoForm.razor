@@ -1,6 +1,6 @@
-﻿@page "/personas/nuevo"
-@page "/personas/editar/{Id:int}"
-@inherits BaseFormulario<PersonaEdicionDto>
+﻿@page "/empleados/nuevo"
+@page "/empleados/editar/{Id:int}"
+@inherits BaseFormulario<EmpleadoEdicionDto>
 
 <div class="container mt-4">
     <div class="mb-4">
@@ -147,8 +147,8 @@
 </div>
 
 @code {
-    protected override string ApiUrl => "personas";
-    protected override string PageUrl => "/personas";
+    protected override string ApiUrl => "empleados";
+    protected override string PageUrl => "/empleados";
 
     private string tabActiva = "general";
     private void SeleccionarTab(string nombreTab) => tabActiva = nombreTab;
@@ -167,5 +167,5 @@
         await base.OnInitializedAsync();
     }
 
-    private void AgregarFamiliar() => Modelo.Familiar.Add(new FamiliarDto { PersonaId = Modelo.Id });
+    private void AgregarFamiliar() => Modelo.Familiar.Add(new FamiliarDto { EmpleadoId = Modelo.Id });
 }

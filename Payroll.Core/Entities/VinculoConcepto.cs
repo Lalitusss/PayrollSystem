@@ -8,7 +8,7 @@ namespace Payroll.Domain.Entities
         public int Id { get; set; }
         public int ConceptoId { get; set; }
         public int ConvenioId { get; set; }
-        public int CargoId { get; set; } // Usará tu Enum (1=Conv, 2=Cat, 3=Cargo)
+        public int? CargoId { get; set; } // Usará tu Enum (1=Conv, 2=Cat, 3=Cargo)
         public decimal? ValorPersonalizado { get; set; }
         public string? FormulaOverride { get; set; }
         public bool Activo { get; set; } = true;

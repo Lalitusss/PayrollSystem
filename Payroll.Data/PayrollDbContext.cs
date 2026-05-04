@@ -15,7 +15,7 @@ public class PayrollDbContext : DbContext
     public DbSet<DatoBancario> DatosBancarios => Set<DatoBancario>();
     public DbSet<Direccion> Direcciones => Set<Direccion>();
     public DbSet<Familiar> Familiares => Set<Familiar>();
-    public DbSet<Persona> Personas => Set<Persona>();
+    public DbSet<Empleado> Empleados => Set<Empleado>();
     public DbSet<Concepto> Conceptos => Set<Concepto>();
     public DbSet<Convenio> Convenios => Set<Convenio>();
     public DbSet<Categoria> Categorias => Set<Categoria>();
@@ -47,22 +47,22 @@ public class PayrollDbContext : DbContext
         }
 
         // Relación 1 a 1: Persona -> Direccion
-        modelBuilder.Entity<Persona>()
+        modelBuilder.Entity<Empleado>()
             .HasOne(p => p.Direccion)
             .WithOne()
-            .HasForeignKey<Direccion>(d => d.PersonaId);
+            .HasForeignKey<Direccion>(d => d.EmpleadoId);
 
         // Relación 1 a 1: Persona -> DatosBancarios
-        modelBuilder.Entity<Persona>()
+        modelBuilder.Entity<Empleado>()
             .HasOne(p => p.DatoBancario)
             .WithOne()
-            .HasForeignKey<DatoBancario>(db => db.PersonaId);
+            .HasForeignKey<DatoBancario>(db => db.EmpleadoId);
 
         // Relación 1 a N: Persona -> Familiares
-        modelBuilder.Entity<Persona>()
+        modelBuilder.Entity<Empleado>()
             .HasMany(p => p.Familiar)
             .WithOne()
-            .HasForeignKey(f => f.PersonaId);
+            .HasForeignKey(f => f.EmpleadoId);
 
  
 

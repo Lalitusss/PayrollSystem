@@ -5,7 +5,7 @@ namespace Payroll.Core.Entities;
 public class DatoBancario : IEntity
 {
     public int Id { get; set; }
-    public int PersonaId { get; set; } // Foreign Key
+    public int EmpleadoId { get; set; } // Foreign Key
 
     // Relación con el Banco
     public int BancoId { get; set; }
