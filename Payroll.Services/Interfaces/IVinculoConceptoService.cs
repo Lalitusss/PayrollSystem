@@ -1,11 +1,6 @@
-﻿using Payroll.Core.DTOs;
-
+using Payroll.Core.Entities;
 namespace Payroll.Services.Interfaces;
 
-public interface IVinculoConceptoService
+public interface IVinculoConceptoService : IGenericService<VinculoConcepto>
 {
-    Task<List<ConceptoDto>> ObtenerConvenioCargoConceptos(int convenioId, int cargoId);
-    Task ActualizarVinculos(int convenioId, int? cargoId, List<int> conceptoIds);
-    Task<bool> EliminarVinculo(int id);
-    Task<List<ConceptoSeleccionableDto>> ObtenerMaestro();
- }
+}

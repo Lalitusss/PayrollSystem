@@ -1,8 +1,5 @@
-﻿using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Payroll.Core.Entities;
 using Payroll.Core.DTOs;
+using Payroll.Core.Entities;
 using Payroll.Services.Interfaces;
 
 namespace Payroll.API.Controllers;
@@ -14,5 +11,4 @@ public class ConceptosController
        : base(service)
     {
     }
-
 }

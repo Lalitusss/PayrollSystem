@@ -1,4 +1,4 @@
-﻿namespace Payroll.Services.Interfaces;
+namespace Payroll.Services.Interfaces;
 
 public interface IGenericService<T> where T : class
 {

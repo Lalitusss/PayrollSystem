@@ -1,4 +1,4 @@
-﻿using Payroll.Core.Entities;
+using Payroll.Core.Entities;
 using Payroll.Data;
 using Payroll.Services.Interfaces;
 

@@ -1,7 +1,7 @@
-﻿using Mapster;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Payroll.Core.Interfaces; 
+using Payroll.Core.Interfaces;
 using Payroll.Services.Interfaces;
 
 namespace Payroll.API.Controllers;
@@ -12,43 +12,37 @@ public abstract class GenericController<T, TDto> : ControllerBase
     where T : class, IEntity
 {
     protected readonly IGenericService<T> _service;
-    private IVinculoConceptoService service;
 
     protected GenericController(IGenericService<T> service)
     {
         _service = service;
     }
 
-    protected GenericController(IVinculoConceptoService service)
-    {
-        this.service = service;
-    }
-
     [HttpGet]
     public virtual async Task<ActionResult<IEnumerable<TDto>>> GetAll()
     {
-        // ProjectToType de Mapster traduce el DTO directamente a SQL.
-        // Mantiene el rendimiento de 381ms y el JSON de 1.0 kB.
         var list = await _service.GetQueryable()
                                  .ProjectToType<TDto>()
                                  .ToListAsync();
- 
+
         return Ok(list);
     }
 
-
     [HttpGet("{id}")]
-    public virtual async Task<ActionResult<T>> Get(int id)
+    public virtual async Task<ActionResult<TDto>> Get(int id)
     {
         var entity = await _service.GetByIdAsync(id);
-        return entity == null ? NotFound() : Ok(entity);
+        if (entity == null) return NotFound();
+
+        return Ok(entity.Adapt<TDto>());
     }
 
     [HttpPost]
-    public virtual async Task<ActionResult<T>> Post(T entity)
+    public virtual async Task<ActionResult<TDto>> Post(TDto dto)
     {
+        var entity = dto.Adapt<T>();
         var created = await _service.CreateAsync(entity);
-        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created.Adapt<TDto>());
     }
 
     [HttpPut("{id}")]

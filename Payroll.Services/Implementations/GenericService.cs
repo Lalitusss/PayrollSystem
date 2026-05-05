@@ -1,8 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Payroll.Core.Interfaces;
 using Payroll.Data;
 using Payroll.Services.Interfaces;
 
-public class GenericService<T> : IGenericService<T> where T : class
+namespace Payroll.Services.Implementations;
+
+public class GenericService<T> : IGenericService<T> where T : class, IEntity
 {
     protected readonly PayrollDbContext _context;
     protected readonly DbSet<T> _dbSet;
@@ -17,16 +20,14 @@ public class GenericService<T> : IGenericService<T> where T : class
     {
         return _dbSet.AsNoTracking();
     }
-    public IQueryable<T> GetQueryable() => Query();
+
+    public virtual IQueryable<T> GetQueryable() => Query();
 
     public virtual async Task<IEnumerable<T>> GetAllAsync()
-        => await Query()
-            .AsNoTracking()
-            .ToListAsync();
+        => await Query().ToListAsync();
 
     public virtual async Task<T?> GetByIdAsync(int id)
-        => await Query()
-            .FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
+        => await Query().FirstOrDefaultAsync(e => e.Id == id);
 
     public virtual async Task<T> CreateAsync(T entity)
     {

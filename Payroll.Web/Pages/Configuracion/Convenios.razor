@@ -42,7 +42,7 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-secondary text-white py-3 d-flex justify-content-between align-items-center">
-                    <span class="fw-bold text-uppercase small">Categorías y Cargos</span>
+                    <span class="fw-bold text-uppercase small">CategorÃ­as y Cargos</span>
                     @if (ConvenioSeleccionado != null)
                     {
                         <button class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center"
@@ -56,7 +56,7 @@
                     {
                         <div class="text-center my-auto p-4 animate-fade-in">
                             <i class="bi bi-arrow-left-circle text-muted mb-3" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                            <p class="text-muted small fw-bold">Seleccione un convenio para ver sus categorías</p>
+                            <p class="text-muted small fw-bold">Seleccione un convenio para ver sus categorÃ­as</p>
                         </div>
                     }
                     else if (CargandoCategorias)
@@ -69,7 +69,7 @@
                             <i class="bi bi-plus-circle text-secondary mb-3" style="font-size: 2.5rem; opacity: 0.4;"></i>
                             <p class="text-muted mb-3">No hay categorías configuradas para este convenio.</p>
                             <button class="btn btn-sm btn-outline-secondary" @onclick="NuevaCategoria">
-                                <i class="bi bi-plus-lg me-1"></i> Crear primera categoría
+                                <i class="bi bi-plus-lg me-1"></i> Crear primera categorí­a
                             </button>
                         </div>
                     }
@@ -78,27 +78,40 @@
                         @foreach (var cat in CategoriasDelConvenio)
                         {
                             var estaAbierto = CategoriaAbiertaId == cat.Id;
+                            var cargosLoaded = cat.Cargos?.Any() ?? false;
                             var cantidadCargos = cat.Cargos?.Count ?? 0;
-                            <div class="categoria-group border-bottom">
+                            
+                            <div @key="cat.Id" class="categoria-group border-bottom">
                                 <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center pointer"
-                                     @onclick="() => ToggleCategoria(cat.Id)">
+                                     @onclick="() => ToggleCategoriaAsync(cat)">
                                     <div class="d-flex align-items-center">
-                                        <i class="bi @(estaAbierto ? "bi-chevron-down" : "bi-chevron-right") me-2 text-muted" style="font-size: 0.7rem;"></i>
+                                        @if (CategoriasCargando.Contains(cat.Id))
+                                        {
+                                            <div class="spinner-border spinner-border-sm me-2" role="status" style="width: 0.9rem; height: 0.9rem;"></div>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi @(estaAbierto ? "bi-chevron-down" : "bi-chevron-right") me-2 text-muted" style="font-size: 0.7rem;"></i>
+                                        }
                                         <h6 class="text-dark small fw-bold mb-0 text-uppercase">
                                             @cat.Nombre
-                                            <span class="badge rounded-pill bg-secondary ms-2" style="font-size: 0.6rem;">@cantidadCargos</span>
+                                            @if (cargosLoaded || estaAbierto)
+                                            {
+                                                <span class="badge rounded-pill bg-secondary ms-2" style="font-size: 0.6rem;">@cantidadCargos</span>
+                                            }
                                         </h6>
                                     </div>
                                     <button class="btn btn-sm text-primary p-0" @onclick:stopPropagation="true" @onclick="() => AbrirNuevoCargo(cat)">
                                         <i class="bi bi-plus-circle-fill"></i>
                                     </button>
                                 </div>
-                                @if (estaAbierto)
+                                @if (estaAbierto && cargosLoaded)
                                 {
                                     <div class="list-group list-group-flush animate-fade-in">
                                         @foreach (var cargo in cat.Cargos ?? Enumerable.Empty<CargoDto>())
                                         {
-                                            <div @onclick="() => SeleccionarCargo(cargo)"
+                                            <div @key="cargo.Id"
+                                                 @onclick="() => SeleccionarCargo(cargo)"
                                                  class="list-group-item list-group-item-action py-2 ps-4 border-0 d-flex justify-content-between align-items-center @(CargoSeleccionado?.Id == cargo.Id ? "bg-primary-subtle fw-bold border-start border-primary border-4" : "small text-muted")"
                                                  style="cursor:pointer">
 
@@ -184,7 +197,7 @@
                                     <tbody>
                                         @foreach (var v in ConceptosVinculados)
                                         {
-                                            <tr class="align-middle">
+                                            <tr class="align-middle" @key="v.VinculoConceptoId">
                                                 <td class="ps-3 small text-muted">@v.Codigo</td>
                                                 <td><div class="fw-bold small">@v.Descripcion</div></td>
                                                 <td class="text-center small">@v.Tipo</td>
@@ -241,7 +254,7 @@
     </div>
 </ModalGenerico>
 
-<ModalGenerico Titulo="@($"Nueva Categoría para {ConvenioSeleccionado?.Nombre}")" Mostrar="mostrarModalCategoria" Cargando="procesando" OnCancelar="() => mostrarModalCategoria = false" OnConfirmar="GuardarCategoria">
+<ModalGenerico Titulo="@($"Nueva CategorÃ­a para {ConvenioSeleccionado?.Nombre}")" Mostrar="mostrarModalCategoria" Cargando="procesando" OnCancelar="() => mostrarModalCategoria = false" OnConfirmar="GuardarCategoria">
     <div class="col-12">
         <label class="form-label small fw-bold">Nombre de la Categoría</label>
         <input type="text" class="form-control" @bind="nuevaCategoria.Nombre" />
@@ -303,6 +316,16 @@
             transform: translateY(0);
         }
     }
+
+    @@media (max-width: 768px) {
+        .scroll-column {
+            max-height: 50vh;
+        }
+
+        .col-md-3, .col-md-6 {
+            max-height: 45vh;
+        }
+    }
 </style>
 
 @code {
@@ -313,6 +336,9 @@
     private bool CargandoConceptos = false;
     private int? CategoriaAbiertaId;
     private CancellationTokenSource? cts;
+    
+    // âœ… NUEVO: Rastrear quÃ© categorÃ­as estÃ¡n cargando sus cargos
+    private HashSet<int> CategoriasCargando = new();
 
     private List<ConceptoDto> ConceptosVinculados = new();
     private List<ConceptoSeleccionableDto> MaestroConceptos = new();
@@ -329,18 +355,16 @@
 
     protected override string PageUrl => "/configuracion/convenios";
 
-    // 1. ANULAMOS el disparo automático de la base
     protected override Task OnParametersSetAsync()
     {
-        // Al no llamar a base.OnParametersSetAsync(), evitamos el disparo de Cargar()
         return Task.CompletedTask;
     }
 
-    // 2. Usamos SOLO nuestro método de carga
     protected override async Task OnInitializedAsync()
     {
         await CargarListaOptimizada();
     }
+
     private async Task CargarListaOptimizada()
     {
         try
@@ -353,11 +377,40 @@
         }
     }
 
-    private void ToggleCategoria(int id) => CategoriaAbiertaId = CategoriaAbiertaId == id ? null : id;
+    // âœ… NUEVO: ToggleCategoriaAsync con lazy loading de cargos
+    private async Task ToggleCategoriaAsync(CategoriaDto categoria)
+    {
+        bool estaActualmentAbierto = CategoriaAbiertaId == categoria.Id;
+        
+        // Si se abre y los cargos NO estÃ¡n cargados aÃºn
+        if (!estaActualmentAbierto && (categoria.Cargos == null || !categoria.Cargos.Any()))
+        {
+            CategoriasCargando.Add(categoria.Id);
+            StateHasChanged();
+            
+            try
+            {
+                var cargos = await Http.GetFromJsonAsync<List<CargoDto>>(
+                    $"api/categorias/categoria/{categoria.Id}/cargos");
+                
+                categoria.Cargos = cargos ?? new();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error cargando cargos de categorÃ­a {categoria.Id}: {ex.Message}");
+            }
+            finally
+            {
+                CategoriasCargando.Remove(categoria.Id);
+            }
+        }
+        
+        // Toggle la categorÃ­a
+        CategoriaAbiertaId = estaActualmentAbierto ? null : categoria.Id;
+    }
 
     private async Task SeleccionarConvenio(ConvenioDto c)
     {
-        // Cancelación segura de peticiones anteriores
         cts?.Cancel();
         cts?.Dispose();
         cts = new CancellationTokenSource();
@@ -369,12 +422,15 @@
         CargandoConceptos = true;
         CategoriasDelConvenio.Clear();
         ConceptosVinculados.Clear();
+        CategoriaAbiertaId = null;
+        CategoriasCargando.Clear();
 
         try
         {
-            // Tarea 1: Categorías
-            var tCategorias = Http.GetFromJsonAsync<List<CategoriaDto>>($"api/categorias/convenio/{c.Id}", token);
-            // Tarea 2: Conceptos (Columna 3)
+            // âœ… CAMBIO: Usar endpoint optimizado
+            var tCategorias = Http.GetFromJsonAsync<List<CategoriaDto>>(
+                $"api/categorias/convenio/{c.Id}/optimizado", token);
+            
             var tConceptos = CargarConceptosColumna3(token);
 
             await Task.WhenAll(tCategorias, tConceptos);
@@ -384,7 +440,7 @@
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error en selección: {ex.Message}");
+            Console.WriteLine($"Error en selecciÃ³n: {ex.Message}");
         }
         finally
         {
@@ -412,17 +468,14 @@
 
         try
         {
-            // Cargar conceptos base del convenio
             string urlConvenio = $"api/VinculosConceptos/convenio/{ConvenioSeleccionado.Id}/cargo/0";
             var conceptosConvenio = await Http.GetFromJsonAsync<List<ConceptoDto>>(urlConvenio, token) ?? new();
 
             if (CargoSeleccionado != null)
             {
-                // Cargar conceptos específicos del cargo
                 string urlCargo = $"api/VinculosConceptos/convenio/{ConvenioSeleccionado.Id}/cargo/{CargoSeleccionado.Id}";
                 var conceptosCargo = await Http.GetFromJsonAsync<List<ConceptoDto>>(urlCargo, token) ?? new();
 
-                // Unificar evitando duplicados por Id (priorizando visualmente el origen)
                 ConceptosVinculados = conceptosConvenio
                     .Concat(conceptosCargo)
                     .DistinctBy(x => x.Id)
@@ -453,7 +506,6 @@
             var maestroOriginal = await Http.GetFromJsonAsync<List<ConceptoSeleccionableDto>>("api/VinculosConceptos/maestro") ?? new();
             var idsYaVinculados = ConceptosVinculados.Select(v => v.Id).ToList();
 
-            // Solo mostrar conceptos que no están vinculados
             MaestroConceptos = maestroOriginal
                 .Where(m => !idsYaVinculados.Contains(m.Id))
                 .ToList();
@@ -538,7 +590,7 @@
 
     private async Task EliminarCargo(CargoDto cargo)
     {
-        if (await Confirmar("¿Eliminar Cargo?", $"Vas a borrar '{cargo.Nombre}'"))
+        if (await Confirmar("Â¿Eliminar Cargo?", $"Vas a borrar '{cargo.Nombre}'"))
         {
             var response = await Http.DeleteAsync($"api/cargos/{cargo.Id}");
             if (response.IsSuccessStatusCode)
@@ -579,7 +631,7 @@
 
     private async Task EliminarVinculo(ConceptoDto v)
     {
-        if (await Confirmar("¿Desvincular?", $"¿Quitar '{v.Descripcion}'?"))
+        if (await Confirmar("Â¿Desvincular?", $"Â¿Quitar '{v.Descripcion}'?"))
         {
             var response = await Http.DeleteAsync($"api/VinculosConceptos/{v.VinculoConceptoId}");
             if (response.IsSuccessStatusCode)

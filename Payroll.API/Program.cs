@@ -25,9 +25,7 @@ builder.Services.AddDbContext<PayrollDbContext>(options =>
     {
         // Activa el Split Query globalmente
         sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-
-        // Opcional: Configura reintentos automáticos si la DB está en Azure
-        sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+ 
     }));
 
 // 3. REGISTRAR SERVICIOS DE APLICACIÓN
@@ -71,21 +69,5 @@ app.MapControllers();
 
 // Redirección de la raíz (/) a Scalar para evitar la pantalla por defecto de Azure
 app.MapGet("/", () => Results.Redirect("/scalar/v1"));
-
-// --- BLOQUE DE CALENTAMIENTO ---
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<PayrollDbContext>();
-    try
-    {
-        // Forzamos la primera conexión para evitar latencia inicial
-        await context.Database.CanConnectAsync();
-        Console.WriteLine("--> Base de Datos Caliente y Lista.");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"--> Error al calentar la base de datos: {ex.Message}");
-    }
-}
-
+ 
 app.Run();
